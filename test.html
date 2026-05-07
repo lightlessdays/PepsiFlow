@@ -1,0 +1,421 @@
+
+<!doctype html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Onboarding Dashboard</title>
+<style>
+  :root{
+    --bg:#0e0f12;
+    --panel:#15171c;
+    --panel-2:#1b1e25;
+    --line:#262a33;
+    --text:#e7e9ee;
+    --muted:#8a90a0;
+    --accent:#6ee7b7;
+    --warn:#f59e0b;
+    --bad:#ef4444;
+    --good:#10b981;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,sans-serif}
+  a{color:inherit;text-decoration:none}
+  header{padding:28px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em}
+  header .meta{font-size:12px;color:var(--muted)}
+  main{padding:24px 32px 64px;max-width:1400px;margin:0 auto}
+  .crumbs{display:flex;gap:8px;align-items:center;margin-bottom:18px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .crumbs span.sep{opacity:.5}
+  .crumbs button{background:transparent;border:0;color:var(--muted);cursor:pointer;padding:0;font:inherit}
+  .crumbs button:hover{color:var(--text)}
+  .crumbs .here{color:var(--text)}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h2{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+  .card .num{font-size:32px;font-weight:600;letter-spacing:-0.02em;margin-top:6px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:12px}
+  .row b{color:var(--text);font-weight:500}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid var(--line)}
+  .pill.good{color:var(--good);border-color:rgba(16,185,129,.3)}
+  .pill.bad{color:var(--bad);border-color:rgba(239,68,68,.3)}
+  .pill.warn{color:var(--warn);border-color:rgba(245,158,11,.3)}
+  .kpi-card{cursor:pointer;transition:transform .15s ease,border-color .15s ease}
+  .kpi-card:hover{transform:translateY(-2px);border-color:#3a4150}
+  .section{margin-top:28px}
+  .section h3{font-size:14px;margin:0 0 12px;font-weight:600;color:var(--text);letter-spacing:-0.01em}
+  .bar-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .bar-row{display:grid;grid-template-columns:160px 1fr 60px;gap:12px;align-items:center;padding:8px 6px;border-radius:8px;cursor:pointer}
+  .bar-row:hover{background:var(--panel-2)}
+  .bar-row .label{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-row .track{height:8px;background:#22262f;border-radius:999px;overflow:hidden}
+  .bar-row .fill{height:100%;background:linear-gradient(90deg,#6ee7b7,#34d399);border-radius:999px}
+  .bar-row .pct{font-variant-numeric:tabular-nums;text-align:right;color:var(--muted);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{font-weight:500;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:var(--panel-2);position:sticky;top:0}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--panel-2)}
+  .table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;max-height:560px;overflow-y:auto}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{font-size:12px;padding:5px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+  .chip b{color:var(--text)}
+  .empty{padding:32px;text-align:center;color:var(--muted)}
+  .err{padding:16px;background:#2a1414;border:1px solid #5a1f1f;color:#fca5a5;border-radius:var(--radius)}
+  .loader{padding:32px;text-align:center;color:var(--muted);font-size:13px}
+  .loader::before{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .toolbar{display:flex;gap:8px;align-items:center}
+  .toolbar input{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;min-width:240px}
+  .toolbar input:focus{outline:none;border-color:#3a4150}
+  .tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:10px;border:1px solid var(--line)}
+  .tab{padding:6px 14px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted);border:0;background:transparent;font:inherit}
+  .tab.active{background:var(--panel);color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Onboarding Dashboard</h1>
+    <div class='meta' id='meta'>Loading latest snapshot...</div>
+  </div>
+  <div class='toolbar'>
+    <button class='tab' id='reload' style='border:1px solid var(--line);background:var(--panel-2);padding:8px 14px;border-radius:8px;cursor:pointer'>Refresh</button>
+  </div>
+</header>
+
+<main>
+  <nav class='crumbs' id='crumbs'></nav>
+  <div id='view'></div>
+</main>
+
+<script>
+  const API = 'https://pepsi-onboard-ace.lovable.app/api/public/json';
+  const state = { stack: [], data: null };
+
+  async function api(path){
+    const r = await fetch(API + '/' + path, { headers: { accept: 'application/json' } });
+    if(!r.ok) throw new Error('Failed to load ' + path + ' (' + r.status + ')');
+    return r.json();
+  }
+
+  function el(tag, attrs, ...kids){
+    const n = document.createElement(tag);
+    if(attrs){
+      for(const k in attrs){
+        if(k === 'class') n.className = attrs[k];
+        else if(k === 'onclick') n.onclick = attrs[k];
+        else if(k === 'html') n.innerHTML = attrs[k];
+        else n.setAttribute(k, attrs[k]);
+      }
+    }
+    for(const k of kids){
+      if(k == null) continue;
+      if(typeof k === 'string' || typeof k === 'number') n.appendChild(document.createTextNode(String(k)));
+      else n.appendChild(k);
+    }
+    return n;
+  }
+
+  function pill(pct, lower){
+    const p = Number(pct) || 0;
+    const cls = p >= 80 ? 'good' : (p >= 60 ? 'warn' : 'bad');
+    return el('span', { class: 'pill ' + cls }, p + '%' + (lower ? ' ' + lower : ''));
+  }
+
+  function push(view){
+    state.stack.push(view);
+    render();
+  }
+  function popTo(i){
+    state.stack = state.stack.slice(0, i + 1);
+    render();
+  }
+
+  function renderCrumbs(){
+    const c = document.getElementById('crumbs');
+    c.innerHTML = '';
+    state.stack.forEach((v, i) => {
+      if(i > 0) c.appendChild(el('span', { class: 'sep' }, '›'));
+      const last = i === state.stack.length - 1;
+      if(last) c.appendChild(el('span', { class: 'here' }, v.title));
+      else c.appendChild(el('button', { onclick: () => popTo(i) }, v.title));
+    });
+  }
+
+  function render(){
+    renderCrumbs();
+    const host = document.getElementById('view');
+    host.innerHTML = '';
+    const view = state.stack[state.stack.length - 1];
+    host.appendChild(el('div', { class: 'loader' }, 'Loading ' + view.title + '...'));
+    view.render().then(node => {
+      host.innerHTML = '';
+      host.appendChild(node);
+    }).catch(e => {
+      host.innerHTML = '';
+      host.appendChild(el('div', { class: 'err' }, String(e.message || e)));
+    });
+  }
+
+  // ---------- views ----------
+
+  function homeView(){
+    return {
+      title: 'Overview',
+      render: async () => {
+        const kpis = await api('kpis.json');
+        const wrap = el('div');
+
+        const grid = el('div', { class: 'grid kpis' });
+        kpis.forEach(k => {
+          const status = k.status || (k.complete_pct >= 80 ? 'On target' : 'Below target');
+          const tag = status === 'On target' ? 'good' : 'bad';
+          const card = el('div', { class: 'card kpi-card', onclick: () => push(byFunctionView(k.program.startsWith('Day') ? 'day1' : 'functional', k.program)) },
+            el('h2', null, k.program),
+            el('div', { class: 'row' }, el('span', { class: 'pill ' + tag }, status), el('span', null, k.window)),
+            el('div', { class: 'num' }, k.complete_pct + '%'),
+            el('div', { class: 'row' },
+              el('span', null, 'Assigned ', el('b', null, k.assigned)),
+              el('span', null, 'Completed ', el('b', null, k.completed)),
+              el('span', null, 'Overdue ', el('b', null, k.overdue)),
+              el('span', null, 'On track ', el('b', null, k.on_track_pct + '%')),
+            ),
+          );
+          grid.appendChild(card);
+        });
+        wrap.appendChild(grid);
+
+        // Sections
+        const s1 = el('div', { class: 'section' },
+          el('h3', null, 'Functions below target'),
+          el('div', { id: 'below' }, el('div', { class: 'loader' }, 'Loading...')),
+        );
+        const s2 = el('div', { class: 'section' },
+          el('h3', null, 'Governance escalation'),
+          el('div', { id: 'gov' }, el('div', { class: 'loader' }, 'Loading...')),
+        );
+        const s3 = el('div', { class: 'section' },
+          el('h3', null, 'Manager accountability'),
+          el('div', { id: 'mgr' }, el('div', { class: 'loader' }, 'Loading...')),
+        );
+        wrap.appendChild(s1); wrap.appendChild(s2); wrap.appendChild(s3);
+
+        // Lazy load
+        api('below-target.json').then(rows => {
+          const host = document.getElementById('below');
+          host.innerHTML = '';
+          if(!rows.length){ host.appendChild(el('div', { class: 'card empty' }, 'All functions on target.')); return; }
+          host.appendChild(belowTargetTable(rows));
+        });
+        api('governance.json').then(rows => {
+          const host = document.getElementById('gov');
+          host.innerHTML = '';
+          host.appendChild(governanceTable(rows));
+        });
+        api('managers.json').then(rows => {
+          const host = document.getElementById('mgr');
+          host.innerHTML = '';
+          host.appendChild(managersTable(rows.slice(0, 50)));
+        });
+
+        return wrap;
+      }
+    };
+  }
+
+  function byFunctionView(kind, label){
+    return {
+      title: label + ' by function',
+      render: async () => {
+        const rows = await api('by-function-' + kind + '.json');
+        const wrap = el('div');
+        const max = Math.max(1, ...rows.map(r => r.assigned));
+
+        const bars = el('div', { class: 'bar-wrap' });
+        rows.forEach(r => {
+          const bar = el('div', { class: 'bar-row', onclick: () => push(assignmentsView({ kind, function: r.function }, r.function + ' · ' + label)) },
+            el('div', { class: 'label' }, r.function),
+            el('div', { class: 'track' }, el('div', { class: 'fill', style: 'width:' + Math.round((r.assigned / max) * 100) + '%' })),
+            el('div', { class: 'pct' }, r.complete_pct + '%'),
+          );
+          bars.appendChild(bar);
+        });
+        wrap.appendChild(bars);
+
+        const tbl = el('div', { class: 'section' },
+          el('h3', null, 'Detail'),
+          el('div', { class: 'table-wrap' }, byFunctionTable(rows, kind, label)),
+        );
+        wrap.appendChild(tbl);
+        return wrap;
+      }
+    };
+  }
+
+  function byFunctionTable(rows, kind, label){
+    const t = el('table');
+    t.appendChild(el('thead', null, el('tr', null,
+      el('th', null, 'Function'),
+      el('th', null, 'Assigned'),
+      el('th', null, 'Completed'),
+      el('th', null, 'Complete %'),
+      el('th', null, 'Overdue'),
+      el('th', null, 'On track %'),
+    )));
+    const tb = el('tbody');
+    rows.forEach(r => {
+      tb.appendChild(el('tr', { onclick: () => push(assignmentsView({ kind, function: r.function }, r.function + ' · ' + label)) },
+        el('td', null, r.function),
+        el('td', null, r.assigned),
+        el('td', null, r.completed),
+        el('td', null, pill(r.complete_pct)),
+        el('td', null, r.overdue),
+        el('td', null, pill(r.on_track_pct)),
+      ));
+    });
+    t.appendChild(tb);
+    return t;
+  }
+
+  function belowTargetTable(rows){
+    const wrap = el('div', { class: 'table-wrap' });
+    const t = el('table');
+    t.appendChild(el('thead', null, el('tr', null,
+      el('th', null, 'Program'), el('th', null, 'Function'),
+      el('th', null, 'Assigned'), el('th', null, 'Completed'),
+      el('th', null, 'Complete %'), el('th', null, 'Gap'),
+    )));
+    const tb = el('tbody');
+    rows.forEach(r => {
+      const kind = r.program === 'Day 1' ? 'day1' : 'functional';
+      tb.appendChild(el('tr', { onclick: () => push(assignmentsView({ kind, function: r.function }, r.function + ' · ' + r.program)) },
+        el('td', null, r.program),
+        el('td', null, r.function),
+        el('td', null, r.assigned),
+        el('td', null, r.completed),
+        el('td', null, pill(r.complete_pct)),
+        el('td', null, '−' + r.gap_to_target + '%'),
+      ));
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function governanceTable(rows){
+    const wrap = el('div', { class: 'table-wrap' });
+    const t = el('table');
+    t.appendChild(el('thead', null, el('tr', null,
+      el('th', null, 'Stage'), el('th', null, 'Program'),
+      el('th', null, 'Trigger'), el('th', null, 'Count'),
+      el('th', null, 'Action'),
+    )));
+    const tb = el('tbody');
+    rows.forEach(r => {
+      const kind = r.program === 'Day 1' ? 'day1' : 'functional';
+      tb.appendChild(el('tr', { onclick: () => push(assignmentsView({ kind, status: 'incomplete' }, r.program + ' · ' + r.stage)) },
+        el('td', null, r.stage),
+        el('td', null, r.program),
+        el('td', null, r.trigger),
+        el('td', null, r.count),
+        el('td', null, r.action),
+      ));
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function managersTable(rows){
+    const wrap = el('div', { class: 'table-wrap' });
+    const t = el('table');
+    t.appendChild(el('thead', null, el('tr', null,
+      el('th', null, 'Manager'), el('th', null, 'Email'),
+      el('th', null, 'Reports'), el('th', null, 'Assignments'),
+      el('th', null, 'Completed'), el('th', null, 'Overdue'),
+      el('th', null, 'Complete %'),
+    )));
+    const tb = el('tbody');
+    rows.forEach(r => {
+      tb.appendChild(el('tr', { onclick: () => push(assignmentsView({ manager: r.manager }, r.manager)) },
+        el('td', null, r.manager),
+        el('td', null, r.email || '—'),
+        el('td', null, r.reports),
+        el('td', null, r.total_assignments),
+        el('td', null, r.completed),
+        el('td', null, r.overdue),
+        el('td', null, pill(r.complete_pct)),
+      ));
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function assignmentsView(filters, title){
+    return {
+      title: 'Assignments · ' + title,
+      render: async () => {
+        const qs = new URLSearchParams();
+        for(const k in filters){ if(filters[k] != null) qs.set(k, filters[k]); }
+        const rows = await api('assignments.json' + (qs.toString() ? '?' + qs.toString() : ''));
+        const wrap = el('div');
+
+        const chips = el('div', { class: 'filters' });
+        for(const k in filters){ chips.appendChild(el('span', { class: 'chip' }, k + ': ', el('b', null, String(filters[k])))); }
+        chips.appendChild(el('span', { class: 'chip' }, 'rows: ', el('b', null, String(rows.length))));
+        wrap.appendChild(chips);
+
+        const tw = el('div', { class: 'table-wrap' });
+        const t = el('table');
+        t.appendChild(el('thead', null, el('tr', null,
+          el('th', null, 'GPID'), el('th', null, 'Employee'),
+          el('th', null, 'Function'), el('th', null, 'Manager'),
+          el('th', null, 'Program'), el('th', null, 'Kind'),
+          el('th', null, 'Days'), el('th', null, 'Pct'),
+          el('th', null, 'Status'),
+        )));
+        const tb = el('tbody');
+        rows.slice(0, 1000).forEach(r => {
+          const status = r.is_complete ? 'Complete' : (r.is_overdue ? 'Overdue' : 'In progress');
+          const cls = r.is_complete ? 'good' : (r.is_overdue ? 'bad' : 'warn');
+          tb.appendChild(el('tr', null,
+            el('td', null, String(r.gpid)),
+            el('td', null, r.employee_name),
+            el('td', null, r.job_function || '—'),
+            el('td', null, r.manager_name || '—'),
+            el('td', null, r.program_title || r.program_id),
+            el('td', null, r.program_kind),
+            el('td', null, r.days_since_assignment ?? '—'),
+            el('td', null, (r.pct_completion ?? 0) + '%'),
+            el('td', null, el('span', { class: 'pill ' + cls }, status)),
+          ));
+        });
+        t.appendChild(tb);
+        tw.appendChild(t);
+        wrap.appendChild(tw);
+
+        if(rows.length > 1000){
+          wrap.appendChild(el('div', { class: 'empty' }, 'Showing first 1000 of ' + rows.length + ' rows.'));
+        }
+        return wrap;
+      }
+    };
+  }
+
+  // ---------- boot ----------
+  document.getElementById('reload').onclick = () => { state.stack = [homeView()]; render(); };
+
+  fetch(API + '/index.json').then(r => r.json()).then(idx => {
+    document.getElementById('meta').textContent = 'Snapshot generated ' + new Date(idx.generatedAt).toLocaleString();
+  }).catch(() => {});
+
+  state.stack = [homeView()];
+  render();
+</script>
+</body>
+</html>
