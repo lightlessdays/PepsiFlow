@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PepsiCo Talent Flow · Onboarding Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f6f7; --surface:#fff; --border:#111; --border-strong:#111;
+    --text:#0a0a0a; --muted:#666; --accent:#0a0a0a; --accent-2:#e32934;
+    --good:#0f8a4d; --warn:#c47d00; --bad:#c1272d; --chip:#f1f1f1;
+    --shadow:0 1px 0 rgba(0,0,0,.04);
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;line-height:1.4}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  button{font-family:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:18px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .logo{width:32px;height:32px;border-radius:50%;background:conic-gradient(from 220deg,#0a0a0a 0 50%,var(--accent-2) 50% 100%);box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px #111}
+  .brand h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .brand p{margin:0;color:var(--muted);font-size:11px}
+  .meta{font-size:11px;color:var(--muted);text-align:right}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:8px;border:1px solid #111;background:#fff;color:var(--text);font-size:12px;font-weight:500;cursor:pointer;transition:all .12s}
+  .btn:hover{background:#111;color:#fff}
+  .btn.primary{background:#111;color:#fff;border-color:#111}
+  .btn.primary:hover{background:#fff;color:#111}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid #111;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 2px;font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+  .card .sub{color:var(--muted);font-size:11px;margin-bottom:10px}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 4px}
+  @media(max-width:700px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+  .kpi{border:1px solid #111;border-radius:8px;padding:9px 10px;cursor:pointer;transition:all .12s;background:#fff}
+  .kpi:hover{background:#111;color:#fff}
+  .kpi:hover .l{color:#bbb}
+  .kpi:hover .v{color:#fff !important}
+  .kpi .v{font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .kpi .l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;font-weight:600}
+  .kpi.good .v{color:var(--good)} .kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.02em;border:1px solid currentColor}
+  .badge.good{background:rgba(15,138,77,.1);color:var(--good)}
+  .badge.bad{background:rgba(193,39,45,.1);color:var(--bad)}
+  .badge.warn{background:rgba(196,125,0,.12);color:var(--warn)}
+  .row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .link-more{font-size:11.5px;color:#111;font-weight:600;margin-top:10px;display:inline-block;cursor:pointer;border-bottom:1px solid #111}
+  .link-more:hover{text-decoration:underline}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid #111;margin:12px 0 12px}
+  .tab{padding:7px 14px;border:none;background:transparent;color:var(--muted);font-weight:500;cursor:pointer;border-bottom:2px solid transparent;font-size:12px;transition:all .12s;margin-bottom:-1px}
+  .tab.active{color:#111;border-bottom-color:#111;font-weight:700}
+  .tab:hover{color:var(--text)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #111;vertical-align:middle}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#111;font-weight:700;background:#fafafa;cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:2;border-bottom:1.5px solid #111}
+  th:hover{color:var(--text)}
+  th .sort{opacity:.4;margin-left:4px;font-size:9px}
+  th.sorted .sort{opacity:1;color:#111}
+  tr.filter-row th{position:sticky;top:28px;background:#fff;cursor:default;padding:4px 6px;z-index:1;border-bottom:1px solid #111}
+  tr.filter-row input,tr.filter-row select{width:100%;padding:3px 5px;border:1px solid #111;border-radius:5px;font-size:11px;font-family:inherit;outline:none;background:#fff}
+  tr.filter-row input:focus,tr.filter-row select:focus{box-shadow:0 0 0 1px #111}
+  tbody tr{transition:background .12s;cursor:pointer}
+  tbody tr:hover{background:#f3f3f3}
+  .pct-bar{display:inline-block;width:50px;height:5px;background:#eee;border:1px solid #111;border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:5px}
+  .pct-bar .f{display:block;height:100%}
+  .num{font-variant-numeric:tabular-nums;font-weight:500}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:18px;animation:fadein .15s}
+  .modal-backdrop.open{display:flex}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .modal{background:#fff;border:1.5px solid #111;border-radius:12px;max-width:1200px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .modal header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid #111}
+  .modal header h3{margin:0;font-size:14px;font-weight:700}
+  .modal header .close{background:none;border:1px solid #111;font-size:16px;cursor:pointer;color:#111;padding:0 10px;border-radius:6px;line-height:1.6}
+  .modal header .close:hover{background:#111;color:#fff}
+  .modal .body{padding:14px 18px;overflow:auto;flex:1}
+  .modal .body.iframe-body{padding:0;display:flex}
+  .modal .body.iframe-body iframe{flex:1;border:0;width:100%;min-height:75vh}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  .loading{padding:50px;text-align:center;color:var(--muted)}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#111;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .chart-wrap{position:relative;height:260px}
+  .chart-wrap.tall{height:320px}
+  .pill{display:inline-block;padding:1px 7px;border-radius:5px;background:#fff;border:1px solid #111;font-size:10.5px;color:#111;margin-right:3px}
+  .mailto{font-size:11.5px;color:#111;border-bottom:1px dotted #111}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+  @media(max-width:1000px){.charts-row{grid-template-columns:1fr}}
+  .footer{margin-top:18px;text-align:center;color:var(--muted);font-size:11px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>PepsiCo Talent Flow</h1>
+        <p>India · Onboarding Programs Dashboard</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="meta" id="meta">Loading…</div>
+      <button class="btn" onclick="loadAll()">↻ Reload</button>
+      <button class="btn primary" onclick="openAdmin()">⚙ Admin Panel</button>
+    </div>
+  </header>
+
+  <div id="root">
+    <div class="loading"><span class="spinner"></span>Loading dashboard…</div>
+  </div>
+  <div class="footer">PepsiCo Talent Flow · onboarding analytics · target 80%</div>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <header>
+      <h3 id="modalTitle">Details</h3>
+      <button class="close" onclick="closeModal()">×</button>
+    </header>
+    <div class="body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const API = "https://pepsi-onboard-ace.lovable.app/api/public/json";
+const ADMIN_URL = "https://pepsi-onboard-ace.lovable.app/admin/roster";
+const state = { data: {}, activeKindTab: "day1" };
+
+const $ = (s, r=document) => r.querySelector(s);
+const el = (tag, attrs={}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "html") n.innerHTML = attrs[k];
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), attrs[k]);
+    else n.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids.flat()) {
+    if (c == null || c === false) continue;
+    n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return n;
+};
+
+async function fetchJson(path){
+  const r = await fetch(API + "/" + path, { cache:"no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status + " — " + path);
+  return r.json();
+}
+
+function pctColor(v){ return v >= 80 ? "var(--good)" : v >= 60 ? "var(--warn)" : "var(--bad)"; }
+function pctBar(v){
+  v = Math.round(Number(v)||0);
+  return `<span class="pct-bar"><span class="f" style="width:${Math.max(0,Math.min(100,v))}%;background:${pctColor(v)}"></span></span><span class="num">${v}%</span>`;
+}
+function pctBarRow(v, row){
+  // Safeguard: if row marked complete, always show 100%.
+  if (row && (row.is_complete === true || row.is_complete === "true")) v = 100;
+  return pctBar(v);
+}
+function statusBadge(s){ return s === "On target" ? `<span class="badge good">On target</span>` : `<span class="badge bad">Below target</span>`; }
+function mailLink(v){ return v ? `<a class="mailto" href="mailto:${v}" onclick="event.stopPropagation()">${v}</a>` : `<span class="pill">—</span>`; }
+
+async function loadAll(){
+  $("#root").innerHTML = `<div class="loading"><span class="spinner"></span>Loading dashboard…</div>`;
+  try {
+    const [kpis, byD1, byFn, gov, below, mgrs, progs] = await Promise.all([
+      fetchJson("kpis.json"),
+      fetchJson("by-function-day1.json"),
+      fetchJson("by-function-functional.json"),
+      fetchJson("governance.json"),
+      fetchJson("below-target.json"),
+      fetchJson("managers.json"),
+      fetchJson("programs.json"),
+    ]);
+    state.data = { kpis, byD1, byFn, gov, below, mgrs, progs };
+    $("#meta").innerHTML = `Snapshot · ${new Date().toLocaleString()} · ${progs.length} programs tracked`;
+    render();
+  } catch (e) {
+    $("#root").innerHTML = `<div class="card"><h2 style="color:var(--bad)">Failed to load</h2><p class="sub">${e.message}</p></div>`;
+  }
+}
+
+function render(){
+  const root = $("#root");
+  root.innerHTML = "";
+
+  // KPI cards
+  const grid = el("div", { class:"grid-2" });
+  state.data.kpis.forEach((k) => grid.appendChild(kpiCard(k)));
+  root.appendChild(grid);
+
+  // Tabs - by function (drives governance + chart selection)
+  const tabsCard = el("div", { class:"card", style:"margin-top:16px" });
+  tabsCard.innerHTML = `
+    <div class="row-head">
+      <div><h2>Onboarding by job function</h2>
+      <div class="sub">Click any function row or chart bar to see the underlying assignments</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${state.activeKindTab==='day1'?'active':''}" data-k="day1">Day 1 Onboarding</button>
+      <button class="tab ${state.activeKindTab==='functional'?'active':''}" data-k="functional">Functional Onboarding</button>
+    </div>
+    <div class="charts-row">
+      <div><div class="chart-wrap tall"><canvas id="byFnChart"></canvas></div></div>
+      <div id="byFnTableWrap"></div>
+    </div>`;
+  tabsCard.querySelectorAll(".tab").forEach((b) => {
+    b.onclick = () => { state.activeKindTab = b.dataset.k; render(); };
+  });
+  root.appendChild(tabsCard);
+  setTimeout(renderByFn, 10);
+
+  // Governance — scoped to selected program tab
+  const kindLabel = state.activeKindTab === "day1" ? "Day 1" : "Functional";
+  const govRows = state.data.gov.filter((g) => g.program === kindLabel);
+  const govCard = el("div", { class:"card", style:"margin-top:16px" });
+  govCard.innerHTML = `<div class="row-head">
+    <div><h2>Governance & escalation · ${kindLabel}</h2>
+    <div class="sub">Stage-by-stage view of overdue learners — switch tab above to flip program</div></div>
+    <button class="btn" onclick='downloadCsv("governance-${state.activeKindTab}", ${JSON.stringify(govRows).replace(/'/g,"&#39;")})'>⬇ CSV</button></div>`;
+  govCard.appendChild(genericTable(govRows,
+    ["stage","trigger","count","action"],
+    { stage:"Stage", trigger:"Trigger", count:"Count", action:"Action" },
+    (row) => openAssignmentsByUrl(row.drilldown_url, `${kindLabel} · ${row.stage}`)
+  ));
+  // governance funnel chart (clickable)
+  govCard.appendChild(el("div", { class:"chart-wrap", style:"margin-top:18px" }, el("canvas", { id:"govChart" })));
+  root.appendChild(govCard);
+  setTimeout(() => renderGovChart(govRows, kindLabel), 10);
+
+  // Below target + Managers
+  const sideGrid = el("div", { class:"grid-2", style:"margin-top:16px" });
+
+  const belowCard = el("div", { class:"card" });
+  belowCard.innerHTML = `<div class="row-head"><div><h2>Functions below target</h2>
+    <div class="sub">Below 80% completion · ${state.data.below.length} flagged</div></div>
+    <button class="btn" onclick='downloadCsv("below-target", state.data.below)'>⬇ CSV</button></div>`;
+  belowCard.appendChild(genericTable(state.data.below,
+    ["program","function","assigned","completed","complete_pct","gap_to_target"],
+    { program:"Program", function:"Function", assigned:"Asgn", completed:"Done", complete_pct:"%", gap_to_target:"Gap" },
+    (row) => openAssignmentsByUrl(row.drilldown_url, `${row.program} · ${row.function}`),
+    { complete_pct:(v)=>pctBar(v), gap_to_target:(v)=>`<span class="num" style="color:var(--bad)">-${v}%</span>` }
+  ));
+  sideGrid.appendChild(belowCard);
+
+  const mgrCard = el("div", { class:"card" });
+  mgrCard.innerHTML = `<div class="row-head"><div><h2>Manager accountability</h2>
+    <div class="sub">${state.data.mgrs.length} managers</div></div>
+    <button class="btn" onclick='downloadCsv("managers", state.data.mgrs)'>⬇ CSV</button></div>`;
+  mgrCard.appendChild(genericTable(state.data.mgrs,
+    ["manager","email","reports","total_assignments","overdue","complete_pct"],
+    { manager:"Manager", email:"Email", reports:"Reports", total_assignments:"Asgn", overdue:"Overdue", complete_pct:"%" },
+    (row) => openAssignmentsByUrl(row.drilldown_url, `Manager · ${row.manager}`),
+    { complete_pct:(v)=>pctBar(v), email:(v)=>mailLink(v),
+      overdue:(v)=>v>0?`<span class="num" style="color:var(--bad)">${v}</span>`:`<span class="num">0</span>` }
+  ));
+  sideGrid.appendChild(mgrCard);
+  root.appendChild(sideGrid);
+
+  // Below-target visual
+  const charts = el("div", { class:"card", style:"margin-top:16px" });
+  charts.innerHTML = `<h2>Largest gaps to target</h2>
+    <div class="sub">Click a bar to drill into its function</div>
+    <div class="chart-wrap"><canvas id="belowChart"></canvas></div>`;
+  root.appendChild(charts);
+  setTimeout(renderBelowChart, 10);
+
+  // Quick links
+  const links = el("div", { class:"card", style:"margin-top:16px" });
+  links.innerHTML = `<h2>Browse all data</h2><div class="sub">Filterable, searchable, downloadable · drillable to the last employee</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <button class="btn primary" onclick="openEmployees()">All employees</button>
+      <button class="btn" onclick="openAssignments({})">All assignments</button>
+      <button class="btn" onclick="openAssignments({kind:'day1'})">Day 1 assignments</button>
+      <button class="btn" onclick="openAssignments({kind:'functional'})">Functional assignments</button>
+      <button class="btn" onclick="openAssignments({status:'overdue'})">Overdue only</button>
+      <button class="btn" onclick="openAssignments({status:'incomplete'})">Incomplete only</button>
+      <button class="btn" onclick="openPrograms()">Programs catalog</button>
+    </div>`;
+  root.appendChild(links);
+}
+
+function kpiCard(k){
+  const c = el("div", { class:"card" });
+  c.innerHTML = `
+    <div class="row-head">
+      <div><h2>${k.program}</h2><div class="sub">${k.window}</div></div>
+      <div>${statusBadge(k.status)}</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi" data-act="all"><div class="v num">${k.assigned}</div><div class="l">Assigned</div></div>
+      <div class="kpi good" data-act="complete"><div class="v num">${k.completed}</div><div class="l">Completed</div></div>
+      <div class="kpi ${k.complete_pct>=80?'good':k.complete_pct>=60?'warn':'bad'}"><div class="v num">${k.complete_pct}%</div><div class="l">Complete %</div></div>
+      <div class="kpi bad" data-act="overdue"><div class="v num">${k.overdue}</div><div class="l">Overdue</div></div>
+      <div class="kpi ${k.on_track_pct>=80?'good':k.on_track_pct>=60?'warn':'bad'}"><div class="v num">${k.on_track_pct}%</div><div class="l">% on track</div></div>
+    </div>
+    <span class="link-more">Open detailed charts →</span>`;
+  const kind = k.program.toLowerCase().includes("day") ? "day1" : "functional";
+  c.querySelectorAll(".kpi").forEach((node) => {
+    const act = node.dataset.act;
+    node.onclick = () => {
+      const params = { kind };
+      if (act === "complete") params.status = "complete";
+      if (act === "overdue") params.status = "overdue";
+      openAssignments(params, `${k.program} · ${act}`);
+    };
+  });
+  c.querySelector(".link-more").onclick = () => { state.activeKindTab = kind; render(); window.scrollTo({top:600,behavior:"smooth"}); };
+  return c;
+}
+
+let chartInstances = {};
+function destroyChart(id){ if(chartInstances[id]){ chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+function renderByFn(){
+  const data = state.activeKindTab === "day1" ? state.data.byD1 : state.data.byFn;
+  const ctx = document.getElementById("byFnChart");
+  if (!ctx) return;
+  destroyChart("byFn");
+  const labels = data.map(r => r.function);
+  const completedPct = data.map(r => r.complete_pct);
+  const overduePct = data.map(r => r.assigned ? Math.round(r.overdue/r.assigned*100) : 0);
+  const onTrackPct = data.map((r,i) => Math.max(0, 100 - completedPct[i] - overduePct[i]));
+  chartInstances.byFn = new Chart(ctx, {
+    type:"bar",
+    data:{ labels, datasets:[
+      { label:"Completed %", data:completedPct, backgroundColor:"#0f8a4d", stack:"a" },
+      { label:"On track %",  data:onTrackPct,  backgroundColor:"#0a4d8c", stack:"a" },
+      { label:"Overdue %",   data:overduePct,  backgroundColor:"#c1272d", stack:"a" },
+    ]},
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      onClick:(_,els)=>{ if(!els.length) return;
+        const fn = labels[els[0].index];
+        openAssignments({ kind:state.activeKindTab, function:fn }, `${state.activeKindTab==='day1'?'Day 1':'Functional'} · ${fn}`);
+      },
+      scales:{ x:{stacked:true,max:100,ticks:{callback:v=>v+"%"}}, y:{stacked:true,ticks:{font:{size:11}}}},
+      plugins:{ legend:{position:"top",labels:{font:{size:11}}}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}%`}}}
+    }
+  });
+  const wrap = document.getElementById("byFnTableWrap");
+  wrap.innerHTML = "";
+  wrap.appendChild(el("div", { class:"row-head", style:"margin-bottom:8px" },
+    el("div", { class:"sub" }, `${data.length} functions`),
+    el("button", { class:"btn", onclick:()=>downloadCsv(`by-function-${state.activeKindTab}`, data) }, "⬇ CSV")
+  ));
+  wrap.appendChild(genericTable(data,
+    ["function","assigned","completed","complete_pct","overdue"],
+    { function:"Function", assigned:"Asgn", completed:"Done", complete_pct:"%", overdue:"Overdue" },
+    (row) => openAssignments({ kind:state.activeKindTab, function:row.function }, `${state.activeKindTab==='day1'?'Day 1':'Functional'} · ${row.function}`),
+    { complete_pct:(v)=>pctBar(v) }
+  ));
+}
+
+function renderGovChart(rows, kindLabel){
+  const ctx = document.getElementById("govChart");
+  if (!ctx) return;
+  destroyChart("gov");
+  const stages = rows.map(r => r.stage);
+  const counts = rows.map(r => r.count);
+  chartInstances.gov = new Chart(ctx, {
+    type:"bar",
+    data:{ labels:stages, datasets:[
+      { label:`${kindLabel} learners per stage`, data:counts,
+        backgroundColor: kindLabel==="Day 1" ? "#0a4d8c" : "#e32934" }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      onClick:(_,els)=>{ if(!els.length) return;
+        const r = rows[els[0].index];
+        openAssignmentsByUrl(r.drilldown_url, `${kindLabel} · ${r.stage}`);
+      },
+      plugins:{ title:{display:true,text:`Governance funnel — click a bar to see learners`, font:{size:13}}, legend:{display:false}},
+      scales:{ y:{beginAtZero:true,ticks:{precision:0}}}
+    }
+  });
+}
+
+function renderBelowChart(){
+  const ctx = document.getElementById("belowChart");
+  if (!ctx) return;
+  destroyChart("below");
+  const top = state.data.below.slice(0, 12);
+  chartInstances.below = new Chart(ctx, {
+    type:"bar",
+    data:{ labels: top.map(b=>`${b.function} (${b.program})`),
+      datasets:[{ label:"Gap to 80% target", data: top.map(b=>b.gap_to_target), backgroundColor:"#c1272d" }]},
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}},
+      scales:{ x:{ ticks:{callback:v=>v+"%"}}},
+      onClick:(_,els)=>{ if(!els.length) return; const b=top[els[0].index]; openAssignmentsByUrl(b.drilldown_url, `${b.program} · ${b.function}`); }
+    }
+  });
+}
+
+// ============== Generic table: search + per-column filter + sort ==============
+function genericTable(rows, cols, labels, onRowClick, formatters={}){
+  const wrap = el("div");
+  let sortCol = null, sortDir = 1, query = "";
+  const filters = {}; cols.forEach(c => filters[c] = "");
+
+  const top = el("div", { style:"display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap" });
+  const search = el("input", { placeholder:"Search across all columns…", style:"padding:6px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:12px;flex:1;min-width:200px" });
+  search.oninput = () => { query = search.value.toLowerCase(); draw(); };
+  const clearBtn = el("button", { class:"btn", onclick:()=>{ query=""; search.value=""; cols.forEach(c=>filters[c]=""); draw(true); }}, "Clear filters");
+  const counter = el("div", { class:"sub", style:"margin-left:auto" });
+  top.appendChild(search); top.appendChild(clearBtn); top.appendChild(counter);
+  wrap.appendChild(top);
+
+  const tableWrap = el("div", { style:"max-height:480px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fff" });
+  wrap.appendChild(tableWrap);
+
+  // pre-compute distinct values per column for select-style filters
+  const distinct = {};
+  cols.forEach(c => {
+    const vals = [...new Set(rows.map(r => r[c]).filter(v => v !== null && v !== undefined && v !== ""))];
+    distinct[c] = vals.length > 0 && vals.length <= 30 && typeof vals[0] !== "number" ? vals.sort() : null;
+  });
+
+  function passesFilters(r){
+    for (const c of cols){
+      const f = filters[c]; if (!f) continue;
+      const v = r[c]; if (v == null) return false;
+      if (distinct[c]){ if (String(v) !== f) return false; }
+      else { if (!String(v).toLowerCase().includes(f.toLowerCase())) return false; }
+    }
+    return true;
+  }
+
+  function draw(rebuild){
+    const filtered = rows.filter(r =>
+      (!query || cols.some(c => String(r[c]||"").toLowerCase().includes(query))) && passesFilters(r));
+    const sorted = sortCol ? [...filtered].sort((a,b) => {
+      const x=a[sortCol], y=b[sortCol];
+      if (typeof x === "number" && typeof y === "number") return (x-y)*sortDir;
+      return String(x||"").localeCompare(String(y||""))*sortDir;
+    }) : filtered;
+    counter.textContent = `${sorted.length.toLocaleString()} of ${rows.length.toLocaleString()}`;
+
+    const t = el("table");
+    const thead = el("thead");
+    const tr = el("tr");
+    cols.forEach(c => {
+      const th = el("th", { class: sortCol===c?"sorted":"" });
+      th.innerHTML = `${labels[c]||c}<span class="sort">${sortCol===c?(sortDir>0?"▲":"▼"):"⇅"}</span>`;
+      th.onclick = () => { if(sortCol===c) sortDir=-sortDir; else { sortCol=c; sortDir=1;} draw(); };
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    // filter row
+    const ftr = el("tr", { class:"filter-row" });
+    cols.forEach(c => {
+      const th = el("th");
+      let inp;
+      if (distinct[c]){
+        inp = el("select");
+        inp.appendChild(el("option", { value:"" }, "All"));
+        distinct[c].forEach(v => { const o=el("option",{value:String(v)}, String(v)); if(filters[c]===String(v)) o.selected=true; inp.appendChild(o); });
+        inp.onchange = () => { filters[c] = inp.value; draw(); };
+      } else {
+        inp = el("input", { placeholder:"filter…", value: filters[c] });
+        inp.oninput = () => { filters[c] = inp.value; draw(); };
+      }
+      inp.onclick = e => e.stopPropagation();
+      th.appendChild(inp);
+      ftr.appendChild(th);
+    });
+    thead.appendChild(ftr);
+    t.appendChild(thead);
+
+    const tbody = el("tbody");
+    if (sorted.length === 0) {
+      tbody.appendChild(el("tr", {}, el("td", { colspan: cols.length, class:"empty" }, "No rows match filters")));
+    } else {
+      sorted.slice(0, 1000).forEach(r => {
+        const row = el("tr");
+        cols.forEach(c => {
+          const td = el("td");
+          const fmt = formatters[c];
+          td.innerHTML = fmt ? fmt(r[c], r) : (r[c] == null ? "" : String(r[c]));
+          row.appendChild(td);
+        });
+        if (onRowClick) row.onclick = () => onRowClick(r);
+        tbody.appendChild(row);
+      });
+      if (sorted.length > 1000) tbody.appendChild(el("tr", {}, el("td", { colspan: cols.length, class:"empty" }, `…${sorted.length-1000} more rows. Refine filters to see them.`)));
+    }
+    t.appendChild(tbody);
+    tableWrap.innerHTML = ""; tableWrap.appendChild(t);
+  }
+  draw();
+  return wrap;
+}
+
+function downloadCsv(name, rows){
+  if (!rows || !rows.length) { alert("No data"); return; }
+  const cols = Object.keys(rows[0]);
+  const esc = v => { if(v==null) return ""; const s=String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const csv = [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\n");
+  const blob = new Blob([csv], { type:"text/csv" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: name+".csv" });
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---- Drill-down modal: assignments ---------------------------
+async function openAssignmentsByUrl(url, title){
+  const u = new URL(url);
+  const params = {};
+  u.searchParams.forEach((v,k) => params[k]=v);
+  return openAssignments(params, title);
+}
+async function openAssignments(params, title){
+  openModalLoading(title || "Assignments");
+  const qs = new URLSearchParams(params).toString();
+  try {
+    const rows = await fetchJson("assignments.json" + (qs ? "?"+qs : ""));
+    renderAssignmentsModal(title || "Assignments", rows, params);
+  } catch(e){ $("#modalBody").innerHTML = `<div class="empty">Failed: ${e.message}</div>`; }
+}
+function renderAssignmentsModal(title, rows, params){
+  $("#modalTitle").textContent = `${title} · ${rows.length.toLocaleString()} rows`;
+  const body = $("#modalBody"); body.innerHTML = "";
+  const chips = el("div", { style:"margin-bottom:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap" });
+  Object.entries(params).forEach(([k,v]) => chips.appendChild(el("span",{class:"pill"}, `${k}: ${v}`)));
+  chips.appendChild(el("button", { class:"btn", style:"margin-left:auto", onclick:()=>downloadCsv("assignments", rows)}, "⬇ Download CSV"));
+  body.appendChild(chips);
+
+  body.appendChild(genericTable(rows,
+    ["employee_name","email","gpid","job_function","business_unit","manager_name","manager_email","program_title","program_kind","days_since_assignment","pct_completion","is_complete","is_overdue"],
+    { employee_name:"Employee", email:"Email", gpid:"GPID", job_function:"Function", business_unit:"BU",
+      manager_name:"Manager", manager_email:"Manager Email", program_title:"Program", program_kind:"Kind",
+      days_since_assignment:"Days", pct_completion:"%", is_complete:"Done", is_overdue:"Overdue"},
+    (r) => openEmployeeDetail(r.gpid, r.employee_name),
+    {
+      email:(v)=>mailLink(v),
+      manager_email:(v)=>mailLink(v),
+      pct_completion:(v,r)=>pctBarRow(v,r),
+      is_complete:(v)=>v?`<span class="badge good">Yes</span>`:`<span class="badge warn">No</span>`,
+      is_overdue:(v)=>v?`<span class="badge bad">Overdue</span>`:`<span class="pill">On time</span>`,
+      program_kind:(v)=>v==="day1"?`<span class="pill" style="color:var(--accent)">Day 1</span>`:`<span class="pill" style="color:var(--accent-2)">Functional</span>`
+    }
+  ));
+}
+
+async function openEmployees(){
+  openModalLoading("All employees");
+  try {
+    const rows = await fetchJson("employees.json");
+    $("#modalTitle").textContent = `All employees (hired ≥ 1 Nov 2025) · ${rows.length.toLocaleString()}`;
+    const body = $("#modalBody"); body.innerHTML = "";
+    body.appendChild(el("div", { style:"margin-bottom:10px" },
+      el("button", { class:"btn", onclick:()=>downloadCsv("employees", rows)}, "⬇ Download CSV")
+    ));
+    body.appendChild(genericTable(rows,
+      ["first_name","last_name","email","gpid","hire_date","job_function","business_unit","work_location","manager_name","manager_email","level","assigned","completed","overdue","complete_pct"],
+      { first_name:"First", last_name:"Last", email:"Email", gpid:"GPID", hire_date:"Hire date", job_function:"Function", business_unit:"BU", work_location:"Location", manager_name:"Manager", manager_email:"Manager Email", level:"Level", assigned:"Asgn", completed:"Done", overdue:"Overdue", complete_pct:"%"},
+      (r) => openEmployeeDetail(r.gpid, `${r.first_name} ${r.last_name}`),
+      {
+        email:(v)=>mailLink(v),
+        manager_email:(v)=>mailLink(v),
+        complete_pct:(v)=>pctBar(v),
+        overdue:(v)=>v>0?`<span class="num" style="color:var(--bad)">${v}</span>`:`<span class="num">0</span>`
+      }
+    ));
+  } catch(e){ $("#modalBody").innerHTML = `<div class="empty">Failed: ${e.message}</div>`; }
+}
+
+async function openEmployeeDetail(gpid, name){
+  openModalLoading(name || "Employee");
+  try {
+    const rows = await fetchJson("assignments.json?gpid=" + encodeURIComponent(gpid));
+    $("#modalTitle").textContent = `${name||gpid} · ${rows.length} assignments`;
+    const body = $("#modalBody"); body.innerHTML = "";
+    if (rows.length){
+      const r0 = rows[0];
+      body.appendChild(el("div", { style:"margin-bottom:14px;padding:14px;background:#f7f9fb;border-radius:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12.5px"},
+        infoCell("GPID", r0.gpid),
+        infoCell("Email", mailLink(r0.email), true),
+        infoCell("Function", r0.job_function),
+        infoCell("BU", r0.business_unit),
+        infoCell("Location", r0.work_location),
+        infoCell("Manager", `${r0.manager_name || "—"} ${r0.manager_email ? "· " + mailLink(r0.manager_email) : ""}`, true),
+      ));
+    }
+    body.appendChild(el("div", { style:"margin-bottom:8px" },
+      el("button", { class:"btn", onclick:()=>downloadCsv("employee_"+gpid, rows)}, "⬇ Download CSV")
+    ));
+    body.appendChild(genericTable(rows,
+      ["program_title","program_kind","days_since_assignment","pct_completion","is_complete","is_overdue"],
+      { program_title:"Program", program_kind:"Kind", days_since_assignment:"Days", pct_completion:"%", is_complete:"Done", is_overdue:"Overdue"},
+      null,
+      {
+        pct_completion:(v,r)=>pctBarRow(v,r),
+        is_complete:(v)=>v?`<span class="badge good">Yes</span>`:`<span class="badge warn">No</span>`,
+        is_overdue:(v)=>v?`<span class="badge bad">Overdue</span>`:`<span class="pill">On time</span>`,
+        program_kind:(v)=>v==="day1"?`<span class="pill" style="color:var(--accent)">Day 1</span>`:`<span class="pill" style="color:var(--accent-2)">Functional</span>`
+      }
+    ));
+  } catch(e){ $("#modalBody").innerHTML = `<div class="empty">Failed: ${e.message}</div>`; }
+}
+
+function infoCell(label, val, html){
+  const c = el("div");
+  c.innerHTML = `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600">${label}</div><div style="margin-top:2px">${html?val:String(val||"—")}</div>`;
+  return c;
+}
+
+async function openPrograms(){
+  openModalLoading("Programs");
+  try {
+    const rows = await fetchJson("programs.json");
+    $("#modalTitle").textContent = `Programs catalog · ${rows.length}`;
+    const body = $("#modalBody"); body.innerHTML = "";
+    body.appendChild(el("div", { style:"margin-bottom:10px" },
+      el("button", { class:"btn", onclick:()=>downloadCsv("programs", rows)}, "⬇ Download CSV")
+    ));
+    body.appendChild(genericTable(rows,
+      ["program_id","program_title","program_kind"],
+      { program_id:"ID", program_title:"Title", program_kind:"Kind"},
+      null,
+      { program_kind:(v)=>v==="day1"?`<span class="pill" style="color:var(--accent)">Day 1</span>`:v==="functional"?`<span class="pill" style="color:var(--accent-2)">Functional</span>`:`<span class="pill">${v}</span>`}
+    ));
+  } catch(e){ $("#modalBody").innerHTML = `<div class="empty">Failed: ${e.message}</div>`; }
+}
+
+function openModalLoading(title){
+  $("#modalTitle").textContent = title;
+  $("#modalBody").innerHTML = `<div class="loading"><span class="spinner"></span>Loading…</div>`;
+  $("#modal").classList.add("open");
+}
+function closeModal(){ $("#modal").classList.remove("open"); }
+function openAdmin(){
+  $("#modalTitle").textContent = "Admin Panel";
+  const body = $("#modalBody");
+  body.classList.add("iframe-body");
+  body.innerHTML = `<iframe src="${ADMIN_URL}" allow="clipboard-read; clipboard-write"></iframe>`;
+  $("#modal").classList.add("open");
+}
+const _origClose = closeModal;
+closeModal = function(){ $("#modalBody").classList.remove("iframe-body"); _origClose(); };
+$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+loadAll();
+</script>
+</body>
+</html>
