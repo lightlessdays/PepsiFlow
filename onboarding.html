@@ -63,8 +63,9 @@
   th:hover{color:var(--text)}
   th .sort{opacity:.4;margin-left:4px;font-size:9px}
   th.sorted .sort{opacity:1;color:#111}
-  tr.filter-row th{position:sticky;top:28px;background:#fff;cursor:default;padding:4px 6px;z-index:1;border-bottom:1px solid #111}
-  tr.filter-row input,tr.filter-row select{width:100%;padding:3px 5px;border:1px solid #111;border-radius:5px;font-size:11px;font-family:inherit;outline:none;background:#fff}
+  tr.filter-row th{position:sticky;top:28px;background:#fff;cursor:default;padding:4px 6px;z-index:1;border-bottom:1px solid #111;vertical-align:middle}
+  tr.filter-row input,tr.filter-row select{display:block;box-sizing:border-box;width:100%;height:24px;padding:2px 5px;margin:0;border:1px solid #111;border-radius:5px;font-size:11px;font-family:inherit;outline:none;background:#fff;line-height:1.2;-webkit-appearance:none;appearance:none}
+  tr.filter-row select{padding-right:18px;background-image:linear-gradient(45deg,transparent 50%,#111 50%),linear-gradient(135deg,#111 50%,transparent 50%);background-position:calc(100% - 9px) 10px,calc(100% - 5px) 10px;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
   tr.filter-row input:focus,tr.filter-row select:focus{box-shadow:0 0 0 1px #111}
   tbody tr{transition:background .12s;cursor:pointer}
   tbody tr:hover{background:#f3f3f3}
@@ -99,13 +100,15 @@
 <div class="app">
   <header class="top">
     <div class="brand">
+      <div class="logo"></div>
       <div>
-        <h1>PepsiCo's Onboarding Dashboard</h1>
-        <p>PepsiCo India Holdings</p>
+        <h1>PepsiCo Talent Flow</h1>
+        <p>India · Onboarding Programs Dashboard</p>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="meta" id="meta">Loading…</div>
+      <span class="badge good" title="All data is scoped to India BU employees hired on/after 1 Nov 2025" style="padding:4px 10px">✓ Scope: India BU · hired ≥ 1 Nov 2025</span>
       <button class="btn" onclick="loadAll()">↻ Reload</button>
       <button class="btn primary" onclick="openAdmin()">⚙ Admin Panel</button>
     </div>
@@ -114,7 +117,7 @@
   <div id="root">
     <div class="loading"><span class="spinner"></span>Loading dashboard…</div>
   </div>
-  <div class="footer">PepsiCo India Holdings Pvt. Ltd.</div>
+  <div class="footer">PepsiCo Talent Flow · onboarding analytics · target 80%</div>
 </div>
 
 <div class="modal-backdrop" id="modal">
@@ -129,7 +132,7 @@
 
 <script>
 const API = "https://pepsi-onboard-ace.lovable.app/api/public/json";
-const ADMIN_URL = "https://pepsi-onboard-ace.lovable.app/";
+const ADMIN_URL = "https://pepsi-onboard-ace.lovable.app/admin/roster";
 const state = { data: {}, activeKindTab: "day1" };
 
 const $ = (s, r=document) => r.querySelector(s);
@@ -331,14 +334,24 @@ function renderByFn(){
   chartInstances.byFn = new Chart(ctx, {
     type:"bar",
     data:{ labels, datasets:[
-      { label:"Completed %", data:completedPct, backgroundColor:"#0f8a4d", stack:"a" },
-      { label:"On track %",  data:onTrackPct,  backgroundColor:"#0a4d8c", stack:"a" },
-      { label:"Overdue %",   data:overduePct,  backgroundColor:"#c1272d", stack:"a" },
+      { label:"Completed %", data:completedPct, backgroundColor:"#0f8a4d", stack:"a", _status:"complete" },
+      { label:"On track %",  data:onTrackPct,  backgroundColor:"#0a4d8c", stack:"a", _status:"ontrack" },
+      { label:"Overdue %",   data:overduePct,  backgroundColor:"#c1272d", stack:"a", _status:"overdue" },
     ]},
     options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
       onClick:(_,els)=>{ if(!els.length) return;
-        const fn = labels[els[0].index];
-        openAssignments({ kind:state.activeKindTab, function:fn }, `${state.activeKindTab==='day1'?'Day 1':'Functional'} · ${fn}`);
+        const hit = els[0];
+        const fn = labels[hit.index];
+        const ds = chartInstances.byFn.data.datasets[hit.datasetIndex];
+        const status = ds._status;
+        const kind = state.activeKindTab;
+        const kindLbl = kind==='day1'?'Day 1':'Functional';
+        const params = { kind, function:fn };
+        let title = `${kindLbl} · ${fn}`;
+        if (status === "complete") { params.status = "complete"; title += " · Completed"; }
+        else if (status === "overdue") { params.status = "overdue"; title += " · Overdue"; }
+        else if (status === "ontrack") { params.status = "ontrack"; title += " · On track"; }
+        openAssignments(params, title);
       },
       scales:{ x:{stacked:true,max:100,ticks:{callback:v=>v+"%"}}, y:{stacked:true,ticks:{font:{size:11}}}},
       plugins:{ legend:{position:"top",labels:{font:{size:11}}}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}%`}}}
@@ -502,9 +515,16 @@ function downloadCsv(name, rows){
   const cols = Object.keys(rows[0]);
   const esc = v => { if(v==null) return ""; const s=String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
   const csv = [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\n");
-  const blob = new Blob([csv], { type:"text/csv" });
-  const a = el("a", { href: URL.createObjectURL(blob), download: name+".csv" });
-  document.body.appendChild(a); a.click(); a.remove();
+  // Open the CSV in a new tab so the user can preview and "Save as" from there.
+  const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) {
+    // Popup blocked — fall back to a direct download.
+    const a = el("a", { href: url, download: name+".csv" });
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 // ---- Drill-down modal: assignments ---------------------------
@@ -590,6 +610,46 @@ async function openEmployeeDetail(gpid, name){
     body.appendChild(el("div", { style:"margin-bottom:8px" },
       el("button", { class:"btn", onclick:()=>downloadCsv("employee_"+gpid, rows)}, "⬇ Download CSV")
     ));
+    // Per-employee progress over last 3 months
+    const histWrap = el("div", { style:"margin:14px 0;padding:12px;border:1px solid #111;border-radius:10px" });
+    histWrap.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div><strong style="font-size:12.5px">Progress over last 3 months</strong>
+      <div class="sub">Per-snapshot completion across uploaded weekly Excel files</div></div>
+      <button class="btn" id="histCsvBtn">⬇ CSV</button></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="histChart_${gpid}"></canvas></div>
+      <div id="histTable_${gpid}" style="margin-top:10px"></div>`;
+    body.appendChild(histWrap);
+    fetchJson("employee-history.json?gpid=" + encodeURIComponent(gpid)).then(h => {
+      const snaps = (h && h.snapshots) || [];
+      const ctx = document.getElementById("histChart_"+gpid);
+      if (ctx && snaps.length){
+        new Chart(ctx, {
+          type:"line",
+          data:{ labels: snaps.map(s=>s.upload_date), datasets:[
+            { label:"Complete %", data:snaps.map(s=>s.complete_pct), borderColor:"#0f8a4d", backgroundColor:"rgba(15,138,77,.15)", tension:.25, fill:true, pointRadius:4 },
+            { label:"Completed", data:snaps.map(s=>s.completed), borderColor:"#0a4d8c", backgroundColor:"transparent", tension:.25, pointRadius:3, yAxisID:"y2" },
+            { label:"Assigned", data:snaps.map(s=>s.assigned), borderColor:"#666", borderDash:[4,3], backgroundColor:"transparent", tension:.25, pointRadius:3, yAxisID:"y2" },
+          ]},
+          options:{ responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{position:"top",labels:{font:{size:11}}}},
+            scales:{ y:{ beginAtZero:true, max:100, position:"left", ticks:{callback:v=>v+"%"}},
+                     y2:{ beginAtZero:true, position:"right", grid:{display:false}, ticks:{precision:0}}}}
+        });
+      }
+      const tableHost = document.getElementById("histTable_"+gpid);
+      if (tableHost){
+        if (!snaps.length) tableHost.innerHTML = `<div class="empty">No snapshots in the last 3 months</div>`;
+        else tableHost.appendChild(genericTable(
+          snaps.map(s=>({upload_date:s.upload_date, assigned:s.assigned, completed:s.completed, complete_pct:s.complete_pct})),
+          ["upload_date","assigned","completed","complete_pct"],
+          { upload_date:"Snapshot", assigned:"Asgn", completed:"Done", complete_pct:"%"},
+          null,
+          { complete_pct:(v)=>pctBar(v) }
+        ));
+      }
+      const btn = document.getElementById("histCsvBtn");
+      if (btn) btn.onclick = () => downloadCsv("history_"+gpid, snaps.map(s=>({upload_date:s.upload_date, assigned:s.assigned, completed:s.completed, complete_pct:s.complete_pct})));
+    }).catch(()=>{});
     body.appendChild(genericTable(rows,
       ["program_title","program_kind","days_since_assignment","pct_completion","is_complete","is_overdue"],
       { program_title:"Program", program_kind:"Kind", days_since_assignment:"Days", pct_completion:"%", is_complete:"Done", is_overdue:"Overdue"},
