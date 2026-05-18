@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PepsiCo OT Dashboard | Quarterly Limit Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f4f7fc;
+            font-family: 'Inter', sans-serif;
+            color: #1e2a3e;
+            padding: 32px 24px;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            gap: 20px;
+        }
+
+        .title h1 {
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #1e3c4c, #2b5e6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .title p {
+            font-size: 0.85rem;
+            color: #5e7a8c;
+            margin-top: 6px;
+        }
+
+        .upload-area {
+            background: white;
+            border-radius: 28px;
+            padding: 8px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e2edf2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            border-color: #2c9baf;
+            background: #fefefe;
+        }
+        .upload-label i {
+            font-size: 1.3rem;
+            color: #2c9baf;
+        }
+        .upload-label span {
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .fileName {
+            font-size: 0.8rem;
+            color: #3a6b7e;
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .filter-bar {
+            background: white;
+            border-radius: 20px;
+            padding: 16px 24px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e9f0f3;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid #dee9ef;
+        }
+        .filter-group label {
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: #2f5c6e;
+        }
+        select, input[type="date"] {
+            border: none;
+            background: transparent;
+            font-family: 'Inter', monospace;
+            font-size: 0.85rem;
+            padding: 6px 0;
+            outline: none;
+            font-weight: 500;
+            color: #0f2b38;
+        }
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            background: #eef3f6;
+            border-radius: 40px;
+            padding: 4px;
+        }
+        .toggle-btn {
+            padding: 6px 20px;
+            border-radius: 32px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            transition: all 0.2s;
+            border: none;
+            color: #2c5a6b;
+        }
+        .toggle-btn.active {
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            color: #1d7e8c;
+        }
+        .reset-btn {
+            background: none;
+            border: 1px solid #cbdbe2;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 40px;
+        }
+        .kpi-card {
+            background: white;
+            border-radius: 24px;
+            padding: 18px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border: 1px solid #eaf0f5;
+        }
+        .kpi-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: #6f8f9f;
+        }
+        .kpi-value {
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: #1b3b48;
+            line-height: 1.2;
+        }
+        .kpi-sub {
+            font-size: 0.7rem;
+            color: #7599ab;
+        }
+
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .chart-card {
+            flex: 1 1 400px;
+            background: white;
+            border-radius: 28px;
+            padding: 20px 18px;
+            border: 1px solid #eef3f8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .chart-card h3 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #2c9baf;
+            padding-left: 12px;
+        }
+        canvas {
+            max-height: 280px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .drilldown-section {
+            background: white;
+            border-radius: 28px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #eef3f8;
+        }
+        .drilldown-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .employee-table {
+            overflow-x: auto;
+            font-size: 0.8rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf3f7;
+        }
+        th {
+            font-weight: 600;
+            color: #1f5d72;
+        }
+        .badge {
+            background: #eef2f5;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-weight: 500;
+            font-size: 0.7rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 28px;
+            color: #8ba0ae;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 40px;
+            color: #7d9aaa;
+        }
+        @media (max-width: 680px) {
+            body { padding: 16px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="header-section">
+        <div class="title">
+            <h1><i class="fas fa-chart-line" style="color:#2c9baf;"></i> quarterly OT · limit analyzer</h1>
+            <p>upload Excel (.xlsx) | filter by plant & date | toggle instances / hours | click bars to drill down</p>
+        </div>
+        <div class="upload-area" id="uploadTrigger">
+            <div class="upload-label"><i class="fas fa-cloud-upload-alt"></i><span>upload file</span></div>
+            <div class="fileName" id="fileNameDisplay">No file uploaded</div>
+            <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        </div>
+    </div>
+
+    <div class="filter-bar" id="filterBar">
+        <div class="filter-group">
+            <label><i class="fas fa-factory"></i> Plant</label>
+            <select id="plantFilter"><option value="ALL">All Plants</option></select>
+        </div>
+        <div class="filter-group">
+            <label><i class="far fa-calendar-alt"></i> Date Range</label>
+            <input type="date" id="startDate" placeholder="Start Date">
+            <span>—</span>
+            <input type="date" id="endDate" placeholder="End Date">
+        </div>
+        <div class="toggle-group" id="metricToggle">
+            <button class="toggle-btn active" data-metric="hours">Hours</button>
+            <button class="toggle-btn" data-metric="instances">Instances</button>
+        </div>
+        <button class="reset-btn" id="resetFilters"><i class="fas fa-undo-alt"></i> reset</button>
+    </div>
+
+    <div id="dashboardContent">
+        <div class="empty-state">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #cbdbe2; margin-bottom: 16px; display: block;"></i>
+            <h3>Upload an Excel file to get started</h3>
+            <p style="margin-top: 8px;">Supports columns: S.No, Employee GPID, Employee Name, Location, Level, Overtime Hours, Quarter</p>
+        </div>
+    </div>
+
+    <footer>click on any bar → employee-level drilldown | OT cap: 125h critical (100%+), warning 80-100%</footer>
+</div>
+
+<script>
+    let rawData = [];
+    let charts = {};
+    let currentMetric = "hours";
+    let currentFilteredData = [];
+
+    function parseExcelToJson(dataBuffer) {
+        const workbook = XLSX.read(dataBuffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        // Get all rows as array of arrays to handle the header structure
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+        
+        // Find the row with actual column headers (S.No, Employee GPID, etc.)
+        let headerRowIndex = -1;
+        let headers = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (row && row.length > 0) {
+                // Look for the row that has "Employee GPID" or "S.No" column
+                if (row.includes("Employee GPID") || row.includes("S.No")) {
+                    headerRowIndex = i;
+                    headers = row;
+                    break;
+                }
+            }
+        }
+        
+        if (headerRowIndex === -1) {
+            throw new Error("Could not find header row with expected columns");
+        }
+        
+        // Create a mapping of column names to indices
+        const columnMap = {};
+        headers.forEach((col, idx) => {
+            if (col) {
+                columnMap[col.toString().trim()] = idx;
+            }
+        });
+        
+        // Now extract data rows (starting after header row)
+        const dataRows = [];
+        for (let i = headerRowIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+            
+            // Check if row has data (non-empty employee GPID)
+            const gpid = row[columnMap["Employee GPID"]] || row[columnMap["GPID"]] || "";
+            if (!gpid || gpid.toString().trim() === "") continue;
+            
+            dataRows.push(row);
+        }
+        
+        // Convert to objects
+        const jsonData = dataRows.map(row => {
+            const obj = {};
+            for (const [key, idx] of Object.entries(columnMap)) {
+                obj[key] = row[idx] !== undefined ? row[idx] : "";
+            }
+            return obj;
+        });
+        
+        return jsonData;
+    }
+
+    function processData(rows) {
+        const data = [];
+        for (let row of rows) {
+            const gpid = row['Employee GPID'] || row['GPID'] || '';
+            const name = row['Employee Name'] || row['Name'] || '';
+            const supervisor = row['Supervisor Name'] || row['Supervisor'] || '';
+            const location = row['Location'] || row['Plant'] || '';
+            let levelRaw = row['Level'] || row['FR Level'] || '';
+            let hoursVal = parseFloat(row['Overtime Hours'] || row['OT Hours'] || row['Overtime'] || 0);
+            const quarter = row['Quarter'] || '';
+            
+            if (isNaN(hoursVal)) hoursVal = 0;
+            if (hoursVal === 0 && !gpid) continue;
+            if (!gpid || !location) continue;
+            
+            // Clean level
+            let level = levelRaw.toString().toUpperCase();
+            if (level.includes('FR-0')) level = 'FR-0';
+            else if (level.includes('FR-1')) level = 'FR-1';
+            else if (level.includes('FR-2')) level = 'FR-2';
+            else if (level.includes('FR-3')) level = 'FR-3';
+            else if (level === 'FR-0' || level === 'FR-1' || level === 'FR-2' || level === 'FR-3') {}
+            else level = 'FR-0';
+            
+            data.push({ 
+                gpid: String(gpid).trim(), 
+                name: String(name || 'Unknown').trim(), 
+                supervisor: String(supervisor || '').trim(), 
+                location: String(location).trim(), 
+                level, 
+                overtime: hoursVal, 
+                quarter: String(quarter || '').trim() 
+            });
+        }
+        return data;
+    }
+
+    function filterData(data, plant, startDateStr, endDateStr) {
+        let filtered = [...data];
+        if (plant && plant !== "ALL") {
+            filtered = filtered.filter(d => d.location === plant);
+        }
+        if (startDateStr && endDateStr) {
+            const start = new Date(startDateStr);
+            const end = new Date(endDateStr);
+            filtered = filtered.filter(emp => {
+                const q = emp.quarter;
+                const match = q.match(/([A-Za-z]{3})\s(\d{4})/);
+                if (!match) return true;
+                const monthStr = match[1];
+                const year = parseInt(match[2]);
+                const monthIndex = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].indexOf(monthStr);
+                if (monthIndex === -1) return true;
+                const dateObj = new Date(year, monthIndex, 1);
+                return dateObj >= start && dateObj <= end;
+            });
+        }
+        return filtered;
+    }
+
+    function computeKPIs(filteredData) {
+        const empHoursMap = new Map();
+        filteredData.forEach(emp => {
+            const prev = empHoursMap.get(emp.gpid) || 0;
+            empHoursMap.set(emp.gpid, prev + emp.overtime);
+        });
+        
+        let critical = 0, warning = 0;
+        const cap = 125;
+        for (let hrs of empHoursMap.values()) {
+            if (hrs > cap) critical++;
+            else if (hrs >= cap * 0.8) warning++;
+        }
+        
+        const totalEmployees = empHoursMap.size;
+        const totalHours = filteredData.reduce((sum, d) => sum + d.overtime, 0);
+        const instances = filteredData.length;
+        
+        return { totalEmployees, critical, warning, totalHours, instances };
+    }
+
+    function buildHistogram(dataFiltered, metric) {
+        if (metric === "hours") {
+            const hoursList = dataFiltered.map(d => d.overtime);
+            const bins = [0, 20, 40, 60, 80, 100, 120, 150, 200, 300];
+            const counts = new Array(bins.length - 1).fill(0);
+            hoursList.forEach(h => {
+                for (let i = 0; i < bins.length - 1; i++) {
+                    if (h >= bins[i] && h < bins[i + 1]) {
+                        counts[i]++;
+                        break;
+                    }
+                    if (i === bins.length - 2 && h >= bins[bins.length - 1]) {
+                        counts[counts.length - 1]++;
+                    }
+                }
+            });
+            return { labels: bins.slice(0, -1).map((v, i) => `${v}-${bins[i + 1]}`), data: counts };
+        } else {
+            const empMap = new Map();
+            dataFiltered.forEach(e => { empMap.set(e.gpid, (empMap.get(e.gpid) || 0) + e.overtime); });
+            const empHours = Array.from(empMap.values());
+            const bins = [0, 20, 40, 60, 80, 100, 120, 150, 200, 300];
+            const counts = new Array(bins.length - 1).fill(0);
+            empHours.forEach(h => {
+                for (let i = 0; i < bins.length - 1; i++) {
+                    if (h >= bins[i] && h < bins[i + 1]) {
+                        counts[i]++;
+                        break;
+                    }
+                    if (i === bins.length - 2 && h >= bins[bins.length - 1]) {
+                        counts[counts.length - 1]++;
+                    }
+                }
+            });
+            return { labels: bins.slice(0, -1).map((v, i) => `${v}-${bins[i + 1]}`), data: counts };
+        }
+    }
+
+    function getPlantTotals(filteredData, metric) {
+        const plantMap = new Map();
+        if (metric === "hours") {
+            filteredData.forEach(d => { plantMap.set(d.location, (plantMap.get(d.location) || 0) + d.overtime); });
+        } else {
+            filteredData.forEach(d => { plantMap.set(d.location, (plantMap.get(d.location) || 0) + 1); });
+        }
+        return { labels: Array.from(plantMap.keys()), values: Array.from(plantMap.values()) };
+    }
+
+    function getLevelTotals(filteredData, metric) {
+        const levels = ["FR-0", "FR-1", "FR-2", "FR-3"];
+        const sums = [0, 0, 0, 0];
+        if (metric === "hours") {
+            filteredData.forEach(d => {
+                const idx = levels.indexOf(d.level);
+                if (idx >= 0) sums[idx] += d.overtime;
+            });
+        } else {
+            filteredData.forEach(d => {
+                const idx = levels.indexOf(d.level);
+                if (idx >= 0) sums[idx] += 1;
+            });
+        }
+        return { labels: levels, values: sums };
+    }
+
+    function renderDashboard(dataFiltered, metric) {
+        currentFilteredData = dataFiltered;
+        const kpis = computeKPIs(dataFiltered);
+        
+        const kpiHTML = `
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">Employees (unique)</div><div class="kpi-value">${kpis.totalEmployees}</div><div class="kpi-sub">active staff</div></div>
+                <div class="kpi-card"><div class="kpi-title">${metric === 'hours' ? 'Total OT Hours' : 'Total OT Instances'}</div><div class="kpi-value">${metric === 'hours' ? Math.round(kpis.totalHours) : kpis.instances}</div><div class="kpi-sub">${metric === 'hours' ? 'hours logged' : 'record entries'}</div></div>
+                <div class="kpi-card"><div class="kpi-title">⚠️ CRITICAL (>125h)</div><div class="kpi-value" style="color:#bc4e2c;">${kpis.critical}</div><div class="kpi-sub">exceeded quarterly cap</div></div>
+                <div class="kpi-card"><div class="kpi-title">⚡ WARNING (80-100%)</div><div class="kpi-value" style="color:#e68a2e;">${kpis.warning}</div><div class="kpi-sub">approaching limit</div></div>
+            </div>
+        `;
+        
+        const chartsHTML = `
+            <div class="charts-row">
+                <div class="chart-card"><h3><i class="fas fa-chart-bar"></i> OT hours distribution</h3><canvas id="histogramChart" width="400" height="250"></canvas></div>
+                <div class="chart-card"><h3><i class="fas fa-chart-pie"></i> Plant total OT</h3><canvas id="plantPieChart" width="400" height="250"></canvas></div>
+            </div>
+            <div class="charts-row">
+                <div class="chart-card"><h3><i class="fas fa-chart-simple"></i> OT by Level (FR-0 to FR-3)</h3><canvas id="levelChart" width="400" height="250"></canvas></div>
+                <div class="chart-card"><h3><i class="fas fa-location-dot"></i> OT by Location</h3><canvas id="locationChart" width="400" height="250"></canvas></div>
+            </div>
+            <div class="drilldown-section" id="drilldownPanel" style="display: none;">
+                <div class="drilldown-title"><i class="fas fa-users"></i> <span id="drillLabel">Employee details</span></div>
+                <div class="employee-table" id="employeeTableContainer"></div>
+            </div>
+        `;
+        
+        document.getElementById("dashboardContent").innerHTML = kpiHTML + chartsHTML;
+        initCharts(dataFiltered, metric);
+    }
+
+    function initCharts(dataFiltered, metric) {
+        const histogram = buildHistogram(dataFiltered, metric);
+        const plantTot = getPlantTotals(dataFiltered, metric);
+        const levelTot = getLevelTotals(dataFiltered, metric);
+        const locationTot = getPlantTotals(dataFiltered, metric);
+        
+        const ctxHist = document.getElementById('histogramChart')?.getContext('2d');
+        const ctxPie = document.getElementById('plantPieChart')?.getContext('2d');
+        const ctxLevel = document.getElementById('levelChart')?.getContext('2d');
+        const ctxLoc = document.getElementById('locationChart')?.getContext('2d');
+        
+        if (!ctxHist || !ctxPie || !ctxLevel || !ctxLoc) return;
+        
+        if (charts.histogram) charts.histogram.destroy();
+        if (charts.plantPie) charts.plantPie.destroy();
+        if (charts.levelChart) charts.levelChart.destroy();
+        if (charts.locationChart) charts.locationChart.destroy();
+        
+        charts.histogram = new Chart(ctxHist, { 
+            type: 'bar', 
+            data: { labels: histogram.labels, datasets: [{ label: metric === 'hours' ? 'Employees (hours)' : 'Employees (count)', data: histogram.data, backgroundColor: '#7bc5d4', borderRadius: 8 }] }, 
+            options: { responsive: true, onClick: (e, active) => handleBarClick(active, 'histogram', dataFiltered) } 
+        });
+        
+        charts.plantPie = new Chart(ctxPie, { 
+            type: 'pie', 
+            data: { labels: plantTot.labels, datasets: [{ data: plantTot.values, backgroundColor: ['#60a5ba', '#4d8d9e', '#367a8c', '#a8cfdd', '#206b7e'] }] }, 
+            options: { responsive: true, onClick: (e, active) => handlePieClick(active, dataFiltered) } 
+        });
+        
+        charts.levelChart = new Chart(ctxLevel, { 
+            type: 'bar', 
+            data: { labels: levelTot.labels, datasets: [{ label: metric === 'hours' ? 'Total OT Hours' : 'Total Instances', data: levelTot.values, backgroundColor: '#88bfcf' }] }, 
+            options: { responsive: true, onClick: (e, active) => handleBarClick(active, 'level', dataFiltered) } 
+        });
+        
+        charts.locationChart = new Chart(ctxLoc, { 
+            type: 'bar', 
+            data: { labels: locationTot.labels, datasets: [{ label: metric === 'hours' ? 'Hours by Plant' : 'Instances by Plant', data: locationTot.values, backgroundColor: '#61a6ba' }] }, 
+            options: { responsive: true, onClick: (e, active) => handleBarClick(active, 'location', dataFiltered) } 
+        });
+    }
+
+    function handleBarClick(activeElements, chartType, dataFiltered) {
+        if (!activeElements.length) return;
+        const index = activeElements[0].index;
+        
+        if (chartType === 'level') {
+            const level = charts.levelChart.data.labels[index];
+            showDrilldownByField("level", level, dataFiltered);
+        } else if (chartType === 'location') {
+            const loc = charts.locationChart.data.labels[index];
+            showDrilldownByField("location", loc, dataFiltered);
+        } else if (chartType === 'histogram') {
+            const binRange = charts.histogram.data.labels[index];
+            showDrilldownByHistogramBin(binRange, dataFiltered);
+        }
+    }
+
+    function handlePieClick(active, dataFiltered) {
+        if (active.length) {
+            const idx = active[0].index;
+            const plantName = charts.plantPie.data.labels[idx];
+            showDrilldownByField("location", plantName, dataFiltered);
+        }
+    }
+
+    function showDrilldownByField(field, value, dataFiltered) {
+        let filtered = dataFiltered.filter(d => d[field] === value);
+        displayEmployeeTable(filtered, `${field}: ${value} (${filtered.length} employees)`);
+    }
+
+    function showDrilldownByHistogramBin(binRange, dataFiltered) {
+        const [lowStr, highStr] = binRange.split("-");
+        const low = parseFloat(lowStr);
+        const high = parseFloat(highStr);
+        
+        const empHoursMap = new Map();
+        dataFiltered.forEach(e => {
+            empHoursMap.set(e.gpid, (empHoursMap.get(e.gpid) || 0) + e.overtime);
+        });
+        
+        const filteredGPIDs = [];
+        for (let [gpid, hrs] of empHoursMap.entries()) {
+            if (hrs >= low && hrs < high) {
+                filteredGPIDs.push(gpid);
+            }
+        }
+        
+        const filtered = dataFiltered.filter(d => filteredGPIDs.includes(d.gpid));
+        const unique = [];
+        const seen = new Set();
+        for (let e of filtered) {
+            if (!seen.has(e.gpid)) {
+                seen.add(e.gpid);
+                unique.push(e);
+            }
+        }
+        displayEmployeeTable(unique, `OT range ${binRange} hours (${unique.length} employees)`);
+    }
+
+    function displayEmployeeTable(employees, title) {
+        const panel = document.getElementById("drilldownPanel");
+        if (!panel) return;
+        
+        const labelSpan = document.getElementById("drillLabel");
+        labelSpan.innerText = title;
+        
+        if (employees.length === 0) {
+            document.getElementById("employeeTableContainer").innerHTML = "<div class='badge'>No data available</div>";
+            panel.style.display = "block";
+            return;
+        }
+        
+        const empTotalMap = new Map();
+        currentFilteredData.forEach(d => {
+            empTotalMap.set(d.gpid, (empTotalMap.get(d.gpid) || 0) + d.overtime);
+        });
+        
+        let html = `<table><thead><tr><th>GPID</th><th>Name</th><th>Supervisor</th><th>Level</th><th>Plant</th><th>Total OT (h)</th></tr></thead><tbody>`;
+        employees.forEach(emp => {
+            const totalOT = empTotalMap.get(emp.gpid) || emp.overtime;
+            html += `<tr><td>${emp.gpid}</td><td>${emp.name}</td><td>${emp.supervisor || '-'}</td><td>${emp.level}</td><td>${emp.location}</td><td><strong>${totalOT}</strong></td></tr>`;
+        });
+        html += `</tbody></table>`;
+        
+        document.getElementById("employeeTableContainer").innerHTML = html;
+        panel.style.display = "block";
+    }
+
+    function updatePlantDropdown(data) {
+        const plants = [...new Set(data.map(d => d.location).filter(l => l))];
+        const select = document.getElementById("plantFilter");
+        select.innerHTML = '<option value="ALL">All Plants</option>';
+        plants.forEach(p => { select.innerHTML += `<option value="${p}">${p}</option>`; });
+    }
+
+    function updateFiltersAndRender() {
+        if (!rawData.length) return;
+        
+        const plant = document.getElementById("plantFilter").value;
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        const filtered = filterData(rawData, plant, startDate, endDate);
+        renderDashboard(filtered, currentMetric);
+    }
+
+    function handleFileUpload(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const rows = parseExcelToJson(data);
+                rawData = processData(rows);
+                
+                if (rawData.length === 0) {
+                    alert("No valid OT records found. Please check column names: 'Employee GPID', 'Location', 'Overtime Hours'");
+                    return;
+                }
+                
+                document.getElementById("fileNameDisplay").innerText = file.name;
+                updatePlantDropdown(rawData);
+                document.getElementById("startDate").value = "";
+                document.getElementById("endDate").value = "";
+                document.getElementById("plantFilter").value = "ALL";
+                updateFiltersAndRender();
+            } catch (error) {
+                console.error("Error parsing file:", error);
+                alert("Error parsing file: " + error.message + "\n\nPlease ensure the file has columns: Employee GPID, Employee Name, Location, Level, Overtime Hours, Quarter");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Event listeners
+    document.getElementById("uploadTrigger").addEventListener("click", () => document.getElementById("fileInput").click());
+    document.getElementById("fileInput").addEventListener("change", (e) => { 
+        if (e.target.files.length) handleFileUpload(e.target.files[0]); 
+    });
+    document.getElementById("plantFilter").addEventListener("change", updateFiltersAndRender);
+    document.getElementById("startDate").addEventListener("change", updateFiltersAndRender);
+    document.getElementById("endDate").addEventListener("change", updateFiltersAndRender);
+    document.getElementById("resetFilters").addEventListener("click", () => {
+        document.getElementById("plantFilter").value = "ALL";
+        document.getElementById("startDate").value = "";
+        document.getElementById("endDate").value = "";
+        if (rawData.length) updateFiltersAndRender();
+    });
+    
+    document.querySelectorAll(".toggle-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentMetric = btn.getAttribute("data-metric");
+            if (rawData.length) updateFiltersAndRender();
+        });
+    });
+</script>
+</body>
+</html>
