@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MONOCHROME · DEEPSEEK AGENT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* main card – pure black & white */
+        .agent-container {
+            max-width: 780px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #000000;
+            box-shadow: 0.75rem 0.75rem 0 0 #000000;
+            transition: all 0.2s ease;
+        }
+
+        /* header area */
+        .agent-header {
+            padding: 1.75rem 2rem 1rem 2rem;
+            border-bottom: 1px solid #000000;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .agent-name {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #000000;
+            text-transform: uppercase;
+        }
+
+        .agent-badge {
+            font-size: 0.7rem;
+            font-weight: 500;
+            border: 1px solid #000000;
+            padding: 0.2rem 0.5rem;
+            background: #ffffff;
+            color: #000000;
+            font-family: monospace;
+        }
+
+        .status-led {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            font-family: monospace;
+        }
+
+        .led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #000000;
+            transition: background 0.2s;
+        }
+
+        .led.idle {
+            background-color: #ffffff;
+            border: 1px solid #000000;
+        }
+
+        .led.active {
+            background-color: #000000;
+            box-shadow: 0 0 0px 1px #ffffff, 0 0 0px 2px #000000;
+        }
+
+        /* chat history area */
+        .chat-area {
+            padding: 1.5rem 2rem;
+            min-height: 380px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            border-bottom: 1px solid #000000;
+        }
+
+        /* message bubbles — monochrome strict */
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            max-width: 85%;
+            animation: fadeSlide 0.25s ease-out;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            padding: 0.85rem 1.2rem;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            word-break: break-word;
+            white-space: pre-wrap;
+            border: 1px solid #000000;
+            background: #ffffff;
+            color: #000000;
+            font-weight: 450;
+        }
+
+        .message.user .message-bubble {
+            background: #000000;
+            color: #ffffff;
+            border: 1px solid #000000;
+        }
+
+        .message.assistant .message-bubble {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .message-meta {
+            font-size: 0.65rem;
+            font-family: monospace;
+            color: #4a4a4a;
+            letter-spacing: -0.2px;
+            padding: 0 0.25rem;
+        }
+
+        .user .message-meta {
+            text-align: right;
+        }
+
+        /* typing indicator minimal */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.7rem 1.2rem;
+            border: 1px solid #000000;
+            background: #ffffff;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #000000;
+            border-radius: 50%;
+            animation: blink 1.2s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0);}
+            30% { opacity: 1; transform: translateY(-3px);}
+        }
+
+        /* input area – minimal & sharp */
+        .input-area {
+            padding: 1.5rem 2rem 2rem 2rem;
+            background: #ffffff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        textarea {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #000000;
+            padding: 0.9rem 1rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #000000;
+            resize: vertical;
+            outline: none;
+            transition: none;
+            font-weight: 400;
+        }
+
+        textarea:focus {
+            outline: none;
+            border: 1px solid #000000;
+            box-shadow: 0 0 0 1px #000000;
+        }
+
+        button {
+            background: #000000;
+            border: 1px solid #000000;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.85rem 1.6rem;
+            cursor: pointer;
+            font-family: monospace;
+            letter-spacing: 0.3px;
+            transition: all 0.15s linear;
+            min-width: 100px;
+        }
+
+        button:hover {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #000000;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #e0e0e0;
+            color: #2c2c2c;
+            border-color: #2c2c2c;
+            transform: none;
+        }
+
+        .info-bar {
+            margin-top: 1.2rem;
+            border-top: 1px solid #eeeeee;
+            padding-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: #2b2b2b;
+        }
+
+        .clear-btn {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #000000;
+            padding: 0.3rem 0.9rem;
+            font-size: 0.7rem;
+            min-width: auto;
+        }
+
+        .clear-btn:hover {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* scrollbar but minimal */
+        .chat-area::-webkit-scrollbar {
+            width: 5px;
+        }
+        .chat-area::-webkit-scrollbar-track {
+            background: #f0f0f0;
+        }
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #000000;
+        }
+
+        @media (max-width: 550px) {
+            .agent-container {
+                box-shadow: 0.4rem 0.4rem 0 0 #000000;
+            }
+            .message {
+                max-width: 95%;
+            }
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            button {
+                padding: 0.75rem;
+            }
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.6rem;
+            font-family: monospace;
+            margin-top: 1rem;
+            color: #3c3c3c;
+        }
+    </style>
+</head>
+<body>
+<div class="agent-container">
+    <div class="agent-header">
+        <div class="title-section">
+            <div class="agent-name">◼ DEEPSEEK · AGENT</div>
+            <div class="agent-badge">B&W / MINIMAL</div>
+        </div>
+        <div class="status-led">
+            <span class="led idle" id="statusLed"></span>
+            <span id="statusText">idle</span>
+        </div>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+        <div class="message assistant">
+            <div class="message-bubble">
+                ⟡ monochrome core active.<br>ask me anything — pure black & white intelligence.
+            </div>
+            <div class="message-meta">deepseek · ready</div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-group">
+            <textarea id="userInput" rows="2" placeholder="type your message ... (enter to send, shift+enter for newline)"></textarea>
+            <button id="sendBtn">→ SEND</button>
+        </div>
+        <div class="info-bar">
+            <span>◼ black/white · deepseek api</span>
+            <button id="clearChatBtn" class="clear-btn">⟳ clear history</button>
+        </div>
+        <footer>minimal agent · api responses streamed as plain intelligence</footer>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // DEEPSEEK CONFIGURATION (API KEY provided)
+    // --------------------------------------------------------------
+    const DEEPSEEK_API_KEY = "sk-333014a4b3b647a1ad08d1f58dcf6d06";
+    const API_URL = "https://api.deepseek.com/v1/chat/completions";
+
+    // DOM elements
+    const chatContainer = document.getElementById('chatArea');
+    const userTextarea = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendBtn');
+    const clearButton = document.getElementById('clearChatBtn');
+    const statusLed = document.getElementById('statusLed');
+    const statusTextSpan = document.getElementById('statusText');
+
+    // conversation state (holds messages in openai format)
+    let conversationHistory = [
+        { role: "system", content: "You are a minimalist black-and-white AI assistant. Your answers are clear, concise, and direct. Use plain text without markdown or emojis unless necessary. Stay neutral, helpful, and monochrome in spirit. Avoid color references, stay in black & white conceptually. Respond in a straightforward manner with no extra fluff. Maximum helpfulness with minimalist tone." }
+    ];
+
+    // UI helper: update status LED + text
+    function setStatus(isActive, customText = null) {
+        if (isActive) {
+            statusLed.className = "led active";
+            statusTextSpan.innerText = customText || "processing";
+        } else {
+            statusLed.className = "led idle";
+            statusTextSpan.innerText = customText || "idle";
+        }
+    }
+
+    // scroll to bottom of chat
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // add a message to chat UI (without API)
+    function addMessageToUI(role, content, metaText = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        // preserve line breaks
+        bubble.innerText = content;
+        
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        if (metaText) {
+            meta.innerText = metaText;
+        } else {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+            meta.innerText = role === 'user' ? `you · ${time}` : `agent · ${time}`;
+        }
+
+        messageDiv.appendChild(bubble);
+        messageDiv.appendChild(meta);
+        chatContainer.appendChild(messageDiv);
+        scrollToBottom();
+        return messageDiv;
+    }
+
+    // typing indicator management
+    let typingIndicatorDiv = null;
+    function showTypingIndicator() {
+        removeTypingIndicator();
+        typingIndicatorDiv = document.createElement('div');
+        typingIndicatorDiv.className = 'message assistant typing-wrapper';
+        const indicatorInner = document.createElement('div');
+        indicatorInner.className = 'typing-indicator';
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'typing-dot';
+            indicatorInner.appendChild(dot);
+        }
+        typingIndicatorDiv.appendChild(indicatorInner);
+        chatContainer.appendChild(typingIndicatorDiv);
+        scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+        if (typingIndicatorDiv && typingIndicatorDiv.parentNode) {
+            typingIndicatorDiv.remove();
+            typingIndicatorDiv = null;
+        }
+    }
+
+    // core AI request using DeepSeek API
+    async function sendMessageToDeepSeek(userMessageText) {
+        // add user message to conversation history
+        conversationHistory.push({ role: "user", content: userMessageText });
+        
+        // display user message on UI
+        addMessageToUI('user', userMessageText);
+        
+        // disable input while processing
+        setSendButtonState(true);
+        setStatus(true, "thinking");
+        showTypingIndicator();
+
+        try {
+            // prepare request payload (standard openai-compatible)
+            const requestBody = {
+                model: "deepseek-chat",
+                messages: conversationHistory,
+                stream: false,          // minimalist approach: non-stream for simplicity
+                temperature: 0.7,
+                max_tokens: 800
+            };
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                let errorDetail = `API error ${response.status}`;
+                try {
+                    const errJson = await response.json();
+                    errorDetail = errJson.error?.message || errJson.message || errorDetail;
+                } catch(e) { /* ignore */ }
+                throw new Error(`DeepSeek: ${errorDetail}`);
+            }
+
+            const data = await response.json();
+            const assistantReply = data.choices[0]?.message?.content;
+            if (!assistantReply) {
+                throw new Error("Empty response from DeepSeek");
+            }
+
+            // add assistant reply to conversation history
+            conversationHistory.push({ role: "assistant", content: assistantReply });
+            
+            // remove indicator and display assistant message
+            removeTypingIndicator();
+            addMessageToUI('assistant', assistantReply);
+            
+        } catch (error) {
+            console.error("DeepSeek agent error:", error);
+            removeTypingIndicator();
+            // show error message in chat as assistant (black & white style)
+            const errorContent = `◼ transmission error: ${error.message}. please check api key or network.`;
+            addMessageToUI('assistant', errorContent, "system · failure");
+            // also push a placeholder to history to keep consistency (optional)
+            conversationHistory.push({ role: "assistant", content: errorContent });
+        } finally {
+            setSendButtonState(false);
+            setStatus(false, "idle");
+            // re-focus on textarea after short delay
+            setTimeout(() => {
+                userTextarea.focus();
+            }, 100);
+        }
+    }
+
+    // helper: enable/disable send button & textarea style
+    function setSendButtonState(disabled) {
+        sendButton.disabled = disabled;
+        if (disabled) {
+            sendButton.innerText = "···";
+        } else {
+            sendButton.innerText = "→ SEND";
+        }
+        // also style textarea readonly feels? we just keep active but prevent sending again.
+        // user can type but will be blocked by button state.
+    }
+
+    // clear chat history UI + reset conversation (keep system prompt)
+    function resetConversation() {
+        // reset conversation history to default system + maybe welcome msg again
+        conversationHistory = [
+            { role: "system", content: "You are a minimalist black-and-white AI assistant. Your answers are clear, concise, and direct. Use plain text without markdown or emojis unless necessary. Stay neutral, helpful, and monochrome in spirit. Avoid color references, stay in black & white conceptually. Respond in a straightforward manner with no extra fluff. Maximum helpfulness with minimalist tone." }
+        ];
+        // clear UI chat area except initial assistant greeting
+        while (chatContainer.firstChild) {
+            chatContainer.removeChild(chatContainer.firstChild);
+        }
+        // re-add default welcome message (monochrome)
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'message assistant';
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.innerText = "⟡ conversation reset. monochrome agent ready. ask anything.";
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        meta.innerText = "deepseek · fresh start";
+        welcomeDiv.appendChild(bubble);
+        welcomeDiv.appendChild(meta);
+        chatContainer.appendChild(welcomeDiv);
+        scrollToBottom();
+        setStatus(false, "idle");
+        // optional: remove any stuck indicators
+        removeTypingIndicator();
+        setSendButtonState(false);
+        userTextarea.value = "";
+        userTextarea.focus();
+    }
+
+    // main send handler (validate message)
+    async function handleSend() {
+        let message = userTextarea.value.trim();
+        if (message === "") return;
+        
+        // clear input field
+        userTextarea.value = "";
+        // disable textarea temporarily to avoid double send while api is in flight
+        if (sendButton.disabled) return;
+        
+        await sendMessageToDeepSeek(message);
+        // re-focus after send completion
+        userTextarea.focus();
+    }
+
+    // keyboard shortcuts: Enter to send, but Shift+Enter for newline
+    function onTextareaKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendButton.disabled && userTextarea.value.trim() !== "") {
+                handleSend();
+            }
+        }
+    }
+
+    // event listeners
+    sendButton.addEventListener('click', handleSend);
+    clearButton.addEventListener('click', resetConversation);
+    userTextarea.addEventListener('keydown', onTextareaKeydown);
+    
+    // initial load: ensure status correct
+    setStatus(false, "idle");
+    // tiny guard: verify API key existence (just for console hints)
+    if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === "sk-333014a4b3b647a1ad08d1f58dcf6d06") {
+        // The provided key is already set — fine, but if key is invalid the error message will show.
+        // we don't block UI, just show friendly monochrome warning maybe, but api will handle.
+        console.log("DeepSeek API key configured. agent ready.");
+    }
+    
+    // Adjust textarea height dynamically? optional but not needed
+    userTextarea.style.resize = 'vertical';
+    userTextarea.focus();
+
+    // small polish: ensure that after reset we also avoid leftover typing indicator
+    window.addEventListener('load', () => {
+        // Additional guarantee that api key is present; but we trust the given key.
+        // In case of any network issue, user gets clear error.
+        setStatus(false);
+    });
+</script>
+</body>
+</html>
