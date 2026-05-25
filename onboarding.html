@@ -109,7 +109,6 @@
       <div class="meta" id="meta">Loading…</div>
       <span class="badge good" title="All data is scoped to India BU employees hired on/after 1 Nov 2025" style="padding:4px 10px">✓ Scope: India BU · hired ≥ 1 Nov 2025</span>
       <button class="btn" onclick="loadAll()">↻ Reload</button>
-      <button class="btn primary" onclick="openAdmin()">⚙ Admin Panel</button>
     </div>
   </header>
 
@@ -131,7 +130,6 @@
 
 <script>
 const API = "https://pepsi-onboard-ace.lovable.app/api/public/json";
-const ADMIN_URL = "https://pepsi-onboard-ace.lovable.app/admin/roster";
 const state = { data: {}, activeKindTab: "day1" };
 
 const $ = (s, r=document) => r.querySelector(s);
@@ -162,7 +160,6 @@ function pctBar(v){
   return `<span class="pct-bar"><span class="f" style="width:${Math.max(0,Math.min(100,v))}%;background:${pctColor(v)}"></span></span><span class="num">${v}%</span>`;
 }
 function pctBarRow(v, row){
-  // Safeguard: if row marked complete, always show 100%.
   if (row && (row.is_complete === true || row.is_complete === "true")) v = 100;
   return pctBar(v);
 }
@@ -514,12 +511,10 @@ function downloadCsv(name, rows){
   const cols = Object.keys(rows[0]);
   const esc = v => { if(v==null) return ""; const s=String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
   const csv = [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\n");
-  // Open the CSV in a new tab so the user can preview and "Save as" from there.
   const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const w = window.open(url, "_blank");
   if (!w) {
-    // Popup blocked — fall back to a direct download.
     const a = el("a", { href: url, download: name+".csv" });
     document.body.appendChild(a); a.click(); a.remove();
   }
@@ -693,13 +688,7 @@ function openModalLoading(title){
   $("#modal").classList.add("open");
 }
 function closeModal(){ $("#modal").classList.remove("open"); }
-function openAdmin(){
-  $("#modalTitle").textContent = "Admin Panel";
-  const body = $("#modalBody");
-  body.classList.add("iframe-body");
-  body.innerHTML = `<iframe src="${ADMIN_URL}" allow="clipboard-read; clipboard-write"></iframe>`;
-  $("#modal").classList.add("open");
-}
+
 const _origClose = closeModal;
 closeModal = function(){ $("#modalBody").classList.remove("iframe-body"); _origClose(); };
 $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
