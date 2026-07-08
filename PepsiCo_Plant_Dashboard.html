@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PepsiCo Foods India · People MIS</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#06203F; --ink:#012A5E; --blue:#005CB4; --elec:#0E6FFF; --sky:#2BA8E0;
+  --green:#1FA463; --amber:#EB7B30; --red:#E23149;
+  --bg:#EEF3FB; --bg2:#E4ECF7; --card:#FFFFFF; --line:#E1E8F4; --soft:#5A6A86;
+  --shadow:0 6px 20px rgba(6,32,63,.08); --shadow-lg:0 12px 34px rgba(6,32,63,.14);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);
+  background:linear-gradient(135deg,var(--bg),var(--bg2));overflow:hidden}
+.wrap{height:100vh;display:flex;flex-direction:column;padding:12px 16px 10px;gap:10px}
+.hidden{display:none!important}
+
+/* header */
+header.topbar{display:flex;align-items:center;gap:16px;flex:none;
+  background:linear-gradient(120deg,var(--navy),var(--ink));border-radius:14px;padding:10px 20px;
+  box-shadow:var(--shadow-lg);color:#fff;position:relative;overflow:hidden}
+header.topbar::after{content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(43,168,224,.35),transparent 70%);pointer-events:none}
+.brand .wordmark{font-size:19px;font-weight:800;letter-spacing:.3px;z-index:1;position:relative}
+.brand .wordmark span{color:#7Fc4ec}
+.htitle{z-index:1}.htitle h1{font-size:15px;font-weight:800;margin:0}
+.htitle p{font-size:11px;margin:1px 0 0;color:#B9D2EE}
+.nav{display:flex;gap:6px;margin-left:16px;z-index:1;flex-wrap:wrap}
+.nav button{border:none;background:rgba(255,255,255,.10);color:#cfe0f5;font-size:12px;font-weight:700;
+  padding:7px 15px;border-radius:9px;cursor:pointer;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.20);color:#fff}
+.nav button.on{background:var(--elec);color:#fff;box-shadow:0 3px 10px rgba(14,111,255,.4)}
+.hmeta{margin-left:auto;display:flex;align-items:center;gap:9px;z-index:1}
+.plant-chip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);border-radius:9px;
+  padding:6px 13px;font-size:12px;font-weight:800;color:#fff}
+.plant-chip .pd{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.hbtn{border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:11px;font-weight:700;
+  padding:6px 12px;border-radius:8px;cursor:pointer}
+.hbtn:hover{background:rgba(255,255,255,.15)}
+.hbtn.edit{background:var(--elec);border-color:var(--elec)}
+.hbtn.edit:hover{background:var(--blue)}
+
+.page{flex:1;display:grid;gap:10px;min-height:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:13px 15px;position:relative;min-height:0;display:flex;flex-direction:column}
+.card h3{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--soft);margin:0 0 9px}
+.card canvas{flex:1;min-height:0}
+
+/* KPI */
+.kpis{display:grid;gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:11px 15px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--elec)}
+.kpi.k-green::before{background:var(--green)}.kpi.k-amber::before{background:var(--amber)}
+.kpi.k-red::before{background:var(--red)}.kpi.k-blue::before{background:var(--blue)}.kpi.k-navy::before{background:var(--navy)}
+.kpi .lab{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--soft)}
+.kpi .val{font-size:27px;font-weight:800;color:var(--navy);line-height:1.1;margin-top:2px}
+.kpi .val small{font-size:13px;font-weight:700;color:var(--soft)}
+.kpi .sub{font-size:10.5px;font-weight:600;margin-top:1px}
+.kpi .sub.up{color:var(--green)}.kpi .sub.down{color:var(--red)}.kpi .sub.mid{color:var(--soft)}
+
+/* gauge */
+.gauge-wrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.gauge-center{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.gauge-center .g-val{font-size:34px;font-weight:800;color:var(--navy);line-height:1}
+.gauge-center .g-lab{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px}
+
+/* parameter chips (clickable, open popup) */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;overflow:auto;align-content:start;padding:2px}
+.pchip{background:#F7FAFF;border:1px solid var(--line);border-left:5px solid var(--elec);border-radius:11px;
+  padding:9px 12px;cursor:pointer;transition:.15s;position:relative}
+.pchip:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-left-color:var(--blue)}
+.pchip.g{border-left-color:var(--green)}.pchip.a{border-left-color:var(--amber)}.pchip.r{border-left-color:var(--red)}
+.pchip .pn{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.25;margin-bottom:6px;min-height:29px}
+.pchip .pr{display:flex;align-items:center;justify-content:space-between}
+.pchip .rating{font-size:20px;font-weight:800}
+.pchip .rating.g{color:var(--green)}.pchip .rating.a{color:var(--amber)}.pchip .rating.r{color:var(--red)}
+.pchip .wt{font-size:9.5px;font-weight:700;color:var(--soft);background:#EAF1FC;border-radius:5px;padding:2px 7px}
+.pchip .info{position:absolute;top:8px;right:9px;font-size:11px;color:var(--soft);opacity:.6}
+
+/* traffic lights list */
+.lights{display:flex;flex-direction:column;gap:7px;overflow:auto}
+.lights .row{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:4px 2px}
+.lights .row .nm{flex:1;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lights .dot{width:13px;height:13px;border-radius:50%;flex:none}
+.lights .dot.g{background:var(--green)}.lights .dot.a{background:var(--amber)}.lights .dot.r{background:var(--red)}
+.lights .rr{font-weight:800;width:20px;text-align:right}
+
+/* tables */
+.tbl-tools{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.tbl-tools input{width:210px;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:inherit}
+.tbl-tools input:focus{outline:none;border-color:var(--elec)}
+.tbl-scroll{overflow:auto;flex:1;min-height:0;border-radius:8px}
+table.perf{width:100%;border-collapse:collapse;font-size:12px}
+table.perf th{position:sticky;top:0;background:var(--navy);color:#fff;font-size:9.5px;letter-spacing:.4px;
+  text-transform:uppercase;font-weight:700;padding:7px 9px;text-align:left;cursor:pointer;white-space:nowrap;z-index:2}
+table.perf th:hover{background:#0a2e57}
+table.perf td{padding:6px 9px;border-bottom:1px solid #EEF2F9}
+table.perf tr:hover td{background:#F5F9FF}
+table.perf .center{text-align:center}
+.pill{display:inline-block;min-width:22px;text-align:center;font-weight:800;border-radius:6px;padding:2px 7px;font-size:11px}
+.pill.g{background:#D5F0E4;color:#0F6E56}.pill.a{background:#FCEFD9;color:#9A5B12}.pill.r{background:#F9D2D2;color:#A32D2D}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.dot.g{background:var(--green)}.dot.a{background:var(--amber)}.dot.r{background:var(--red)}
+
+/* abbreviation tooltip */
+.abbr{border-bottom:1px dotted var(--soft);cursor:help;position:relative}
+.abbr:hover::after{content:attr(data-full);position:absolute;bottom:135%;left:50%;transform:translateX(-50%);
+  background:var(--navy);color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;
+  box-shadow:var(--shadow-lg);z-index:50;letter-spacing:.2px}
+.abbr:hover::before{content:"";position:absolute;bottom:125%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--navy);z-index:50}
+
+/* modal (criteria popup) */
+.modal-back{position:fixed;inset:0;z-index:200;background:rgba(6,32,63,.55);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+.modal-back.open{display:flex}
+.modal{background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);width:min(560px,95vw);max-height:88vh;
+  display:flex;flex-direction:column;animation:pop .25s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.modal .mh{padding:18px 22px;background:linear-gradient(120deg,var(--navy),var(--ink));color:#fff;border-radius:16px 16px 0 0;display:flex;align-items:flex-start;gap:12px}
+.modal .mh h3{font-size:16px;font-weight:800;margin:0;line-height:1.3}
+.modal .mh .x{margin-left:auto;width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;cursor:pointer;flex:none}
+.modal .mb{padding:18px 22px;overflow:auto}
+.crit-score{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.crit-score .big{font-size:44px;font-weight:800;line-height:1}
+.crit-score .big.g{color:var(--green)}.crit-score .big.a{color:var(--amber)}.crit-score .big.r{color:var(--red)}
+.crit-score .meta{font-size:12px;color:var(--soft);font-weight:600}
+.crit-score .meta b{color:var(--ink);font-size:13px}
+.crit-h{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--soft);margin:0 0 8px}
+.crit-band{display:flex;align-items:center;gap:10px;padding:7px 11px;border-radius:9px;margin-bottom:5px;font-size:12.5px;background:#F7FAFF}
+.crit-band.active{background:#EAF1FC;border:1.5px solid var(--elec);font-weight:700}
+.crit-band .cs{font-weight:800;width:22px;text-align:center;color:var(--navy)}
+.crit-band .cc{flex:1;color:var(--ink)}
+.crit-formula{font-size:12px;color:var(--soft);margin-top:14px;padding:10px 12px;background:#F7FAFF;border-radius:9px;line-height:1.5}
+.crit-formula b{color:var(--ink)}
+
+/* editor modal */
+.emodal{width:min(1000px,97vw)}
+.etable{width:100%;border-collapse:collapse;font-size:12px}
+.etable th{background:var(--navy);color:#fff;font-size:9px;letter-spacing:.4px;text-transform:uppercase;padding:7px;text-align:left;position:sticky;top:0}
+.etable td{padding:5px 6px;border-bottom:1px solid #eef2f9}
+.etable input,.etable select{width:100%;border:1.5px solid var(--line);border-radius:7px;padding:6px;font-size:12px;font-family:inherit;color:var(--ink)}
+.etable input:focus{outline:none;border-color:var(--elec)}
+.etable input.w-sm{width:52px;text-align:center}
+.etable .del{width:26px;height:26px;border-radius:6px;border:1.5px solid #f6dbe1;background:#fff;color:var(--red);font-weight:900;cursor:pointer}
+.ebtn{border:none;border-radius:9px;font-weight:700;font-size:12.5px;padding:9px 16px;cursor:pointer}
+.ebtn.primary{background:var(--elec);color:#fff}.ebtn.ghost{background:#eef2f9;color:var(--blue)}
+.wt-tot{font-size:12px;font-weight:700;color:var(--soft)}.wt-tot b{font-size:14px}.wt-tot.ok b{color:var(--green)}.wt-tot.bad b{color:var(--red)}
+.modal .mf{padding:13px 22px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.modal .mf .sp{margin-left:auto}
+
+/* login */
+#login{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--navy),var(--ink));padding:20px}
+.login-card{background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.35);padding:34px 34px 26px;width:396px;max-width:94vw;animation:pop .4s both}
+.login-mark{font-size:30px;font-weight:800;letter-spacing:.5px;color:var(--navy);text-align:center}
+.login-mark span{color:var(--elec)}
+.login-sub{text-align:center;color:var(--soft);font-size:12px;font-weight:600;margin:2px 0 22px}
+.login-field{margin-bottom:15px}
+.login-field label{display:block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--soft);margin-bottom:5px}
+.login-field select,.login-field input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font-size:13.5px;font-weight:600;color:var(--ink);font-family:inherit;background:#F7FAFF}
+.login-field select:focus,.login-field input:focus{outline:none;border-color:var(--elec)}
+.login-err{color:var(--red);font-size:12px;font-weight:700;min-height:16px;margin-bottom:6px}
+#loginBtn{width:100%;border:none;background:var(--elec);color:#fff;font-size:14px;font-weight:800;padding:12px;border-radius:11px;cursor:pointer;transition:.15s}
+#loginBtn:hover{background:var(--blue);box-shadow:0 8px 22px rgba(14,111,255,.4)}
+.login-note{font-size:10px;color:#9AA7BC;text-align:center;margin:14px 0 0;line-height:1.5}
+
+#loader{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy),var(--ink));display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:998;transition:opacity .5s}
+#loader.hide{opacity:0;pointer-events:none}
+#loader .loadmark{font-size:28px;font-weight:800;color:#fff;animation:pulse 1.3s ease-in-out infinite}
+#loader .loadmark span{color:#7Fc4ec}
+@keyframes pulse{0%,100%{opacity:.55;transform:scale(.98)}50%{opacity:1;transform:scale(1.02)}}
+#loader p{color:#B9D2EE;font-size:13px;font-weight:600}
+.fade{animation:fade .4s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+@media (max-width:1400px){.kpi .val{font-size:23px}.pgrid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:1100px){body{overflow:auto}.wrap{height:auto}.page{grid-template-columns:1fr!important;grid-template-rows:none!important}.card{min-height:250px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-mark">People<span>MIS</span></div>
+    <p class="login-sub">PepsiCo Foods India · Plant People MIS</p>
+    <div class="login-field">
+      <label>Select your plant</label>
+      <select id="loginPlant">
+        <option>Channo</option><option>Pune</option><option selected>Kolkata</option><option>Kosi</option><option>Guwahati</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <label>Access code</label>
+      <input type="password" id="loginCode" placeholder="Enter access code" autocomplete="off">
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <button id="loginBtn">Sign in</button>
+    <p class="login-note">You will only be able to view your own plant's data. Access is managed by your MIS administrator.</p>
+  </div>
+</div>
+
+<div id="loader"><div class="loadmark">People<span>MIS</span></div><p>Loading…</p></div>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand"><div class="wordmark">People<span>MIS</span></div></div>
+    <div class="htitle"><h1>People MIS Dashboard</h1><p>PepsiCo Foods India</p></div>
+    <div class="nav" id="nav">
+      <button data-p="er" class="on">ER Dashboard</button>
+      <button data-p="hr">HR Dashboard</button>
+      <button data-p="erp">ER Parameters</button>
+      <button data-p="hrp">HR Parameters</button>
+    </div>
+    <div class="hmeta">
+      <span class="plant-chip" id="plantChip"><span class="pd"></span>Kolkata Plant</span>
+      <button class="hbtn edit" id="editBtn">✎ Edit</button>
+      <button class="hbtn" id="signout">Sign out</button>
+    </div>
+  </header>
+
+  <div class="page" id="page"></div>
+</div>
+
+<!-- CRITERIA POPUP -->
+<div class="modal-back" id="critModal">
+  <div class="modal">
+    <div class="mh"><h3 id="critName">Parameter</h3><button class="x" onclick="closeModal('critModal')">✕</button></div>
+    <div class="mb" id="critBody"></div>
+  </div>
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="modal-back" id="editModal">
+  <div class="modal emodal">
+    <div class="mh"><div><h3 id="editTitle">Edit Parameters</h3><p style="font-size:11px;opacity:.8;margin:2px 0 0" id="editSub"></p></div><button class="x" onclick="closeModal('editModal')">✕</button></div>
+    <div class="mb" id="editBody" style="padding:14px 18px"></div>
+    <div class="mf"><div class="wt-tot" id="wtTot"></div><div class="sp"></div>
+      <button class="ebtn ghost" onclick="closeModal('editModal')">Cancel</button>
+      <button class="ebtn primary" id="editSave">Save changes</button></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   PEOPLE MIS — per-plant dashboard. Each plant sees ONLY its own data.
+   4 tabs: ER Dashboard · HR Dashboard · ER Parameters · HR Parameters.
+   Data from HRIS_Dashboard_SC_India_Plants_7th_July.xlsx. Kolkata = real.
+   ===================================================================== */
+const PLANTS=["Channo","Pune","Kolkata","Kosi","Guwahati"];
+
+// ER parameters. score:true = drives the consolidated ER score.
+// abbr = {text: fullform} pairs for hover tooltips.
+const ER_PARAMS=[
+ {name:"Attrition % of PCI", wt:5, fpr:"LHR", score:true,
+   formula:"(No. of PCI Left / Avg. PCI) × 100",
+   bands:[["0","5"],["0 – 0.5","4"],["0.5 – 1.0","3"],["1.0 – 1.5","2"],["1.5 – 2.0","1"],["> 2.0","0"]],
+   abbr:{PCI:"Permanent Company Involvement (on-roll workmen)"}},
+ {name:"Availability % of NPCI", wt:6, fpr:"WFO", score:true,
+   formula:"(NPCI Deployed / NPCI Requisition) × 100",
+   bands:[["0","5"],["0 – 0.5","4"],["0.5 – 1.0","3"],["1.0 – 1.5","2"],["1.5 – 2.0","1"]],
+   abbr:{NPCI:"Non-Permanent Company Involvement (contract manpower)"}},
+ {name:"Compliance Self-audit score", wt:5, fpr:"LHR", score:true,
+   formula:"As per Internal Audit Score",
+   bands:[["100","5"],["95 – 99","4"],["90 – 94","3"],["85 – 89","2"],["80 – 84","1"],["< 100","0"]]},
+ {name:"Grievance Resolution – Closure %", wt:10, fpr:"PEO", score:true,
+   formula:"(Grievances Resolved / Grievances Raised) × 100",
+   bands:[["100%","5"],["95%","4"],["90%","3"],["85%","2"],["≤ 80%","1"]]},
+ {name:"Authorized absenteeism (Approved Leaves)", wt:10, fpr:"WFO/PEO", score:false,
+   formula:"(Approved Leaves / Total Mandays) × 100",
+   bands:[["0 – 2%","5"],["2 – 4%","4"],["4 – 6%","3"],["6 – 8%","2"],["> 8%","1"]]},
+ {name:"Unauthorized absenteeism (LOP + LWP)", wt:10, fpr:"WFO/PEO", score:true,
+   formula:"(LOP + LWP / Total Mandays) × 100",
+   bands:[["0%","5"],["0.1 – 0.5%","4"],["0.6 – 1.0%","3"],["1.1 – 1.5%","2"],["> 1.5%","1"]],
+   abbr:{LOP:"Loss Of Pay",LWP:"Leave Without Pay"}},
+ {name:"PCI OT%", wt:7, fpr:"PEO", score:true,
+   formula:"(Overtime Hours / Available Manhours) × 100",
+   bands:[["< 2%","5"],["2.1 – 3%","4"],["3.1 – 4%","3"],["4.1 – 5%","2"],["> 5%","1"]],
+   abbr:{PCI:"Permanent Company Involvement",OT:"Overtime"}},
+ {name:"NPCI OT%", wt:7, fpr:"PEO", score:true,
+   formula:"(Overtime Hours / Available Manhours) × 100",
+   bands:[["< 2%","5"],["2.1 – 3%","4"],["3.1 – 4%","3"],["4.1 – 5%","2"],["> 5%","1"]],
+   abbr:{NPCI:"Non-Permanent Company Involvement",OT:"Overtime"}},
+ {name:"Quarterly OT exceed cases", wt:5, fpr:"PEO", score:false,
+   formula:"Absolute number of cases exceeding OT limit",
+   bands:[["0","5"],["1 – 5","4"],["6 – 10","3"],["11 – 15","2"],["> 15","1"]],
+   abbr:{OT:"Overtime"}},
+ {name:"Shift Compliance", wt:10, fpr:"PEO", score:false,
+   formula:"No. of shift changes / [(no. of employees × 26) − paid leaves]",
+   bands:[["< 2%","5"],["2 – 3%","4"],["3 – 4%","3"],["4 – 5%","2"],["> 5%","1"]]},
+ {name:"Late arrival – HC per month", wt:10, fpr:"PEO", score:false,
+   formula:"No. of headcount arriving late per month",
+   bands:[["0 – 5","5"],["6 – 10","4"],["11 – 15","3"],["16 – 20","2"],["> 20","1"]],
+   abbr:{HC:"Headcount"}},
+ {name:"IR incidents & mandays lost", wt:5, fpr:"LHR", score:true,
+   formula:"Mandays lost due to IR incidents (absolute)",
+   bands:[["0","5"],["> 0","0"]],
+   abbr:{IR:"Industrial Relations"}},
+ {name:"Post Facto Regularization (Leave)", wt:5, fpr:"PEO", score:false,
+   formula:"No. of leaves regularized after the fact",
+   bands:[["0","5"],["1 – 5","4"],["6 – 10","3"],["> 10","1"]]},
+ {name:"Open Domestic Enquiry", wt:5, fpr:"WFO", score:true,
+   formula:"No. of open domestic enquiries",
+   bands:[["0","5"],["1 – 5","4"],["6 – 10","3"],["11 – 15","2"],["> 15","1"]],
+   abbr:{}},
+];
+const ER_RATINGS={
+ Channo:[5,4,3,5,3,4,4,2,4,5,2,3,3,2], Pune:[2,3,3,4,4,4,3,3,3,2,3,3,3,2],
+ Kolkata:[5,5,1,4,1,3,4,1,1,1,2,5,2,3], Kosi:[4,3,4,5,4,2,5,4,3,2,4,2,3,4],
+ Guwahati:[2,3,4,4,2,3,2,4,3,3,3,3,4,5],
+};
+
+// HR metrics. show:true = appears on the HR Dashboard summary. All appear on HR Parameters tab.
+const HR_METRICS=[
+ {cat:"Demography", name:"L01+", show:true, unit:"count", abbr:{"L01+":"Level 01 and above (staff)"}},
+ {cat:"Demography", name:"PCI", show:true, unit:"count", abbr:{PCI:"Permanent Company Involvement"}},
+ {cat:"Demography", name:"NPCI", show:true, unit:"count", abbr:{NPCI:"Non-Permanent Company Involvement"}},
+ {cat:"Demography", name:"Average Footfall of the plant", show:false, unit:"count"},
+ {cat:"Demography", name:"Gender Diversity ratio", show:true, unit:"ratio"},
+ {cat:"Demography", name:"Average Experience (L01+)", show:false, unit:"years", abbr:{"L01+":"Level 01 and above"}},
+ {cat:"Demography", name:"Average Age (L01+)", show:false, unit:"years", abbr:{"L01+":"Level 01 and above"}},
+ {cat:"Training & Capability", name:"Training Hours", show:true, unit:"count"},
+ {cat:"Training & Capability", name:"Training Calendar Compliance", show:false, unit:"pct"},
+ {cat:"Training & Capability", name:"Multiskill %", show:false, unit:"pct"},
+ {cat:"Employee Engagement", name:"FL Engagement Participation", show:false, unit:"pct", abbr:{FL:"Frontline"}},
+ {cat:"Employee Engagement", name:"R&R given during month %", show:false, unit:"pct", abbr:{"R&R":"Rewards & Recognition"}},
+ {cat:"Employee Engagement", name:"Engagement Calendar Compliance", show:true, unit:"pct"},
+ {cat:"Attendance & Payroll", name:"Average Physical Presence (PCI)", show:true, unit:"pct", abbr:{PCI:"Permanent Company Involvement"}},
+ {cat:"Attendance & Payroll", name:"Avg Leaves availed", show:false, unit:"days"},
+ {cat:"Attendance & Payroll", name:"No of Salary Advances", show:false, unit:"count"},
+ {cat:"Attendance & Payroll", name:"No of LOP", show:true, unit:"count", abbr:{LOP:"Loss Of Pay"}},
+ {cat:"Attendance & Payroll", name:"OT Headcount", show:false, unit:"count", abbr:{OT:"Overtime"}},
+ {cat:"Attendance & Payroll", name:"No of New Joinees", show:false, unit:"count"},
+ {cat:"Attendance & Payroll", name:"PLIS Score", show:false, unit:"score", abbr:{PLIS:"Production-Linked Incentive Scheme"}},
+ {cat:"Attendance & Payroll", name:"Long Absenteeism Case", show:true, unit:"count"},
+ {cat:"Onboarding / Offboarding", name:"No of positions open for PCI", show:true, unit:"count", abbr:{PCI:"Permanent Company Involvement"}},
+ {cat:"Onboarding / Offboarding", name:"Exit Case & Exit Interview", show:false, unit:"count"},
+ {cat:"Suggestions", name:"No of Kaizen & OPL", show:false, unit:"count", abbr:{OPL:"One Point Lesson"}},
+];
+const HR_KOLKATA={"L01+":51,"PCI":428,"NPCI":1243,"Average Footfall of the plant":1567,
+ "Gender Diversity ratio":0.14,"Average Experience (L01+)":12.3,"Average Age (L01+)":36.2,
+ "Training Hours":470,"Training Calendar Compliance":88,"Multiskill %":34,
+ "FL Engagement Participation":72,"R&R given during month %":11.45,"Engagement Calendar Compliance":90,
+ "Average Physical Presence (PCI)":92,"Avg Leaves availed":2.93,"No of Salary Advances":6,"No of LOP":111.5,
+ "OT Headcount":191,"No of New Joinees":0,"PLIS Score":0.19,"Long Absenteeism Case":3,
+ "No of positions open for PCI":0,"Exit Case & Exit Interview":0,"No of Kaizen & OPL":29};
+
+/* helpers */
+const $=s=>document.querySelector(s);
+function seed(s){let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)/4294967296;}
+function getCss(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+const HR_VALUES={};
+function initHR(){PLANTS.forEach(p=>{HR_VALUES[p]={};HR_METRICS.forEach(m=>{
+  let v; if(p==="Kolkata"&&HR_KOLKATA[m.name]!==undefined)v=HR_KOLKATA[m.name];
+  else{const base=HR_KOLKATA[m.name]??10,r=seed(p+m.name);
+    if(m.unit==="ratio")v=+(0.10+r*0.12).toFixed(2);
+    else if(m.unit==="pct")v=Math.round(70+r*28);
+    else if(m.unit==="years")v=+(28+r*12).toFixed(1);
+    else if(m.unit==="days")v=+(1+r*3).toFixed(1);
+    else if(m.unit==="score")v=+(0.1+r*0.4).toFixed(2);
+    else v=Math.round((base||10)*(0.6+r*0.8));}
+  HR_VALUES[p][m.name]=v;});});}
+const hrV=(p,n)=>HR_VALUES[p]?.[n];
+const rColor=r=>r>=4?getCss('--green'):r==3?getCss('--amber'):getCss('--red');
+const rClass=r=>r>=4?'g':r==3?'a':'r';
+const statusOf=r=>r>=4?['g','Good']:r==3?['a','Watch']:['r','Critical'];
+
+/* apply abbreviation tooltips to a parameter/metric name */
+function withAbbr(name,abbr){
+  if(!abbr) return name;
+  let out=name;
+  Object.keys(abbr).sort((a,b)=>b.length-a.length).forEach(k=>{
+    const re=new RegExp('\\b'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g');
+    out=out.replace(re,`<span class="abbr" data-full="${abbr[k]}">${k}</span>`);
+  });
+  return out;
+}
+
+/* ER consolidated score = score-driving params only */
+function erScore(plant){let sw=0,swr=0;
+  ER_PARAMS.forEach((p,i)=>{if(p.score){sw+=p.wt;swr+=p.wt*ER_RATINGS[plant][i];}});
+  return {score:swr/sw,tw:sw,pct:(swr/sw)/5};}
+
+const state={plant:"Kolkata",page:"er"};
+
+/* charts */
+let charts=[];
+const newChart=(el,cfg)=>{const c=new Chart(el,cfg);charts.push(c);return c;};
+const clearCharts=()=>{charts.forEach(c=>c.destroy());charts=[];};
+Chart.defaults.font.family="'Segoe UI',sans-serif";Chart.defaults.font.size=10;
+function count(el,to,dec){const dur=700,t0=performance.now();
+  (function tick(t){const k=Math.min(1,(t-t0)/dur),v=to*(0.5-Math.cos(Math.PI*k)/2);
+    el.textContent=dec?v.toFixed(dec):Math.round(v);if(k<1)requestAnimationFrame(tick);})(t0);}
+function runCounters(){document.querySelectorAll('.cnt').forEach(el=>count(el,+el.dataset.to,+el.dataset.dec));}
+function kpi(lab,val,dec,suf,cls,sub){return `<div class="kpi ${cls} fade"><div class="lab">${lab}</div>
+  <div class="val"><span class="cnt" data-to="${val}" data-dec="${dec}">0</span><small>${suf||''}</small></div>
+  <div class="sub ${sub?sub[0]:'mid'}">${sub?sub[1]:''}</div></div>`;}
+
+/* =====================================================================
+   ER DASHBOARD
+   ===================================================================== */
+function pageER(){
+  const me=erScore(state.plant);
+  const scoreP=ER_PARAMS.map((p,i)=>({...p,i,r:ER_RATINGS[state.plant][i]})).filter(p=>p.score);
+  const atRisk=scoreP.filter(p=>p.r<3);
+  $('#page').style.gridTemplate="auto 1fr / repeat(12,1fr)";
+  $('#page').innerHTML=`
+    <div class="kpis" style="grid-column:1/13;grid-template-columns:repeat(4,1fr)">
+      ${kpi("Consolidated ER Score",me.score,2,"/5",me.score>=3.75?'k-green':me.score>=2.5?'k-amber':'k-red',['mid','weighted average'])}
+      ${kpi("Percentage",me.pct*100,0,"%",me.pct>=.6?'k-green':'k-amber',['mid','of maximum'])}
+      ${kpi("Parameters at Risk",atRisk.length,0,"/"+scoreP.length,atRisk.length?'k-red':'k-green',['mid','rated below 3'])}
+      ${kpi("Total Weightage",me.tw,0,"","k-navy",['mid','of scored parameters'])}
+    </div>
+    <div class="card" style="grid-column:1/4"><h3>Consolidated ER Score</h3>
+      <div class="gauge-wrap"><canvas id="c_gauge"></canvas><div class="gauge-center"><div class="g-val">${me.score.toFixed(2)}</div><div class="g-lab">of 5.0</div></div></div></div>
+    <div class="card" style="grid-column:4/9"><h3>Score-driving parameters — tap for criteria &amp; detail</h3>
+      <div class="pgrid" id="er_chips"></div></div>
+    <div class="card" style="grid-column:9/13"><h3>Performance Signals</h3><div class="lights" id="er_lights"></div></div>`;
+  runCounters();
+  const pct=me.score/5;
+  newChart($('#c_gauge'),{type:'doughnut',data:{datasets:[{data:[pct,1-pct],
+    backgroundColor:[me.score>=3.75?getCss('--green'):me.score>=2.5?getCss('--amber'):getCss('--red'),'#EEF2F9'],
+    borderWidth:0,circumference:180,rotation:270,cutout:'74%'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+  // clickable parameter chips
+  $('#er_chips').innerHTML=scoreP.map(p=>{const cl=rClass(p.r);
+    return `<div class="pchip ${cl}" onclick="openCrit(${p.i})">
+      <div class="info">ⓘ</div>
+      <div class="pn">${withAbbr(p.name,p.abbr)}</div>
+      <div class="pr"><span class="rating ${cl}">${p.r}<span style="font-size:11px;color:var(--soft)">/5</span></span>
+        <span class="wt">Wt ${p.wt}</span></div></div>`;}).join('');
+  // performance signals (traffic lights, renamed)
+  $('#er_lights').innerHTML=scoreP.map(p=>{const[sc,st]=statusOf(p.r);
+    return `<div class="row"><span class="dot ${sc}"></span><span class="nm">${withAbbr(p.name,p.abbr)}</span>
+      <span style="font-size:10px;color:var(--soft);font-weight:700">${st}</span><span class="rr" style="color:${rColor(p.r)}">${p.r}</span></div>`;}).join('');
+}
+
+/* criteria popup */
+function openCrit(i){
+  const p=ER_PARAMS[i], r=ER_RATINGS[state.plant][i], cl=rClass(r), [,st]=statusOf(r);
+  $('#critName').innerHTML=withAbbr(p.name,p.abbr);
+  $('#critBody').innerHTML=`
+    <div class="crit-score">
+      <div class="big ${cl}">${r}<span style="font-size:20px;color:var(--soft)">/5</span></div>
+      <div class="meta">Current rating · <b>${st}</b><br>Weightage <b>${p.wt}</b> · Weighted score <b>${(p.wt*r/100).toFixed(2)}</b><br>Owner (FPR) <b><span class="abbr" data-full="First Point of Responsibility">${p.fpr}</span></b></div>
+    </div>
+    <div class="crit-h">Rating criteria</div>
+    ${p.bands.map(([cond,sc])=>`<div class="crit-band ${(+sc===r)?'active':''}"><span class="cs">${sc}</span><span class="cc">${cond}</span></div>`).join('')}
+    <div class="crit-formula"><b>How it's measured:</b><br>${withAbbr(p.formula,p.abbr)}</div>`;
+  openModal('critModal');
+}
+
+/* =====================================================================
+   HR DASHBOARD
+   ===================================================================== */
+function pageHR(){
+  const p=state.plant, show=HR_METRICS.filter(m=>m.show);
+  const g=hrV(p,"Gender Diversity ratio");
+  const disp=m=>{const v=hrV(p,m.name);return m.unit==='ratio'?(v*100).toFixed(0)+'%':m.unit==='pct'?v+'%':v;};
+  $('#page').style.gridTemplate="auto 1fr / repeat(12,1fr)";
+  $('#page').innerHTML=`
+    <div class="kpis" style="grid-column:1/13;grid-template-columns:repeat(5,1fr)">
+      ${kpi("Total Headcount",hrV(p,"L01+")+hrV(p,"PCI")+hrV(p,"NPCI"),0,"","k-navy",['mid','all categories'])}
+      ${kpi("Permanent (PCI)",hrV(p,"PCI"),0,"","k-blue",['mid','on-roll workmen'])}
+      ${kpi("Contract (NPCI)",hrV(p,"NPCI"),0,"","k-blue",['mid','contract manpower'])}
+      ${kpi("Gender Diversity",g*100,0,"%",g>=.15?'k-green':'k-amber',['mid','female ratio'])}
+      ${kpi("Training Hours",hrV(p,"Training Hours"),0,"","k-green",['mid','this month'])}
+    </div>
+    <div class="card" style="grid-column:1/5"><h3>Headcount Split</h3><canvas id="c_hc"></canvas></div>
+    <div class="card" style="grid-column:5/8"><h3>Gender Diversity</h3><canvas id="c_gender"></canvas></div>
+    <div class="card" style="grid-column:8/13"><h3>Key HR Metrics</h3>
+      <div class="tbl-scroll"><table class="perf"><thead><tr><th>Category</th><th>Metric</th><th class="center">Value</th></tr></thead>
+      <tbody>${show.map(m=>`<tr><td><b style="color:var(--blue)">${m.cat}</b></td><td>${withAbbr(m.name,m.abbr)}</td><td class="center"><b>${disp(m)}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+  runCounters();
+  newChart($('#c_hc'),{type:'bar',data:{labels:['L01+','PCI','NPCI'],
+    datasets:[{data:[hrV(p,'L01+'),hrV(p,'PCI'),hrV(p,'NPCI')],backgroundColor:['#0E6FFF','#005CB4','#2BA8E0'],borderRadius:6,barPercentage:.65}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:it=>({'L01+':'Level 01 and above','PCI':'Permanent Company Involvement','NPCI':'Non-Permanent Company Involvement'}[it[0].label]||it[0].label)}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#EEF2F9'}},x:{grid:{display:false}}}}});
+  newChart($('#c_gender'),{type:'doughnut',data:{labels:['Female','Male'],
+    datasets:[{data:[Math.round(g*100),100-Math.round(g*100)],backgroundColor:['#E23149','#005CB4'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}}}});
+}
+
+/* =====================================================================
+   ER PARAMETERS (all params, table)
+   ===================================================================== */
+let sK='idx',sD=1;
+function pageERP(){
+  $('#page').style.gridTemplate="1fr / 1fr";
+  $('#page').innerHTML=`<div class="card"><div class="tbl-tools">
+    <h3 style="margin:0">ER Parameters — All Ratings (${state.plant} Plant)</h3>
+    <input id="erpSearch" placeholder="Search parameters…">
+    <span style="margin-left:auto;font-size:10.5px;color:var(--soft)"><span class="dot g"></span>Good <span class="dot a"></span>Watch <span class="dot r"></span>Critical</span>
+    </div><div class="tbl-scroll"><table class="perf" id="erpTable"><thead id="erpHead"></thead><tbody id="erpBody"></tbody></table></div></div>`;
+  $('#erpSearch').oninput=renderERP; renderERP();
+}
+function renderERP(){
+  const q=($('#erpSearch')?.value||'').toLowerCase();
+  $('#erpHead').innerHTML=`<tr><th data-k="idx">#</th><th data-k="name">Parameter</th><th data-k="formula">How it's measured</th>
+    <th data-k="wt" class="center">Weightage</th><th data-k="r" class="center">Rating</th><th data-k="wtd" class="center">Weighted</th>
+    <th data-k="fpr" class="center"><span class="abbr" data-full="First Point of Responsibility">FPR</span></th><th data-k="status" class="center">Status</th></tr>`;
+  let rows=ER_PARAMS.map((p,i)=>({idx:i+1,name:p.name,abbr:p.abbr,formula:p.formula,wt:p.wt,r:ER_RATINGS[state.plant][i],wtd:+(p.wt*ER_RATINGS[state.plant][i]/100).toFixed(2),fpr:p.fpr}));
+  rows=rows.filter(r=>r.name.toLowerCase().includes(q));
+  rows.sort((a,b)=>{let x=a[sK],y=b[sK];return (x>y?1:x<y?-1:0)*sD;});
+  $('#erpBody').innerHTML=rows.map(r=>{const[sc,st]=statusOf(r.r);
+    return `<tr><td class="center">${r.idx}</td><td><b>${withAbbr(r.name,r.abbr)}</b></td>
+      <td style="font-size:10.5px;color:var(--soft)">${withAbbr(r.formula,r.abbr)}</td><td class="center">${r.wt}</td>
+      <td class="center"><span class="pill ${rClass(r.r)}">${r.r}</span></td><td class="center">${r.wtd.toFixed(2)}</td>
+      <td class="center">${r.fpr}</td><td class="center"><span class="dot ${sc}"></span>${st}</td></tr>`;}).join('');
+  $('#erpHead').querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sK===k)sD*=-1;else{sK=k;sD=1;}renderERP();});
+}
+
+/* =====================================================================
+   HR PARAMETERS (all metrics, table)
+   ===================================================================== */
+let hK='idx',hD=1;
+function pageHRP(){
+  $('#page').style.gridTemplate="1fr / 1fr";
+  $('#page').innerHTML=`<div class="card"><div class="tbl-tools">
+    <h3 style="margin:0">HR Parameters — All Metrics (${state.plant} Plant)</h3>
+    <input id="hrpSearch" placeholder="Search metrics…"></div>
+    <div class="tbl-scroll"><table class="perf" id="hrpTable"><thead id="hrpHead"></thead><tbody id="hrpBody"></tbody></table></div></div>`;
+  $('#hrpSearch').oninput=renderHRP; renderHRP();
+}
+function renderHRP(){
+  const q=($('#hrpSearch')?.value||'').toLowerCase(),p=state.plant;
+  $('#hrpHead').innerHTML=`<tr><th data-k="idx">#</th><th data-k="cat">Category</th><th data-k="name">Metric</th>
+    <th data-k="value" class="center">Value</th><th data-k="unit" class="center">Unit</th><th data-k="freq" class="center">Frequency</th></tr>`;
+  let rows=HR_METRICS.map((m,i)=>({idx:i+1,cat:m.cat,name:m.name,abbr:m.abbr,value:hrV(p,m.name),unit:m.unit}));
+  rows=rows.filter(r=>r.name.toLowerCase().includes(q)||r.cat.toLowerCase().includes(q));
+  if(hK!=='idx')rows.sort((a,b)=>{let x=a[hK],y=b[hK];return (x>y?1:x<y?-1:0)*hD;});
+  $('#hrpBody').innerHTML=rows.map(r=>{let d=r.value;if(r.unit==='ratio')d=(r.value*100).toFixed(0)+'% F';else if(r.unit==='pct')d=r.value+'%';
+    return `<tr><td class="center">${r.idx}</td><td><b style="color:var(--blue)">${r.cat}</b></td><td>${withAbbr(r.name,r.abbr)}</td>
+      <td class="center"><b>${d}</b></td><td class="center" style="font-size:10px;color:var(--soft)">${r.unit}</td><td class="center">Monthly</td></tr>`;}).join('');
+  $('#hrpHead').querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(hK===k)hD*=-1;else{hK=k;hD=1;}renderHRP();});
+}
+
+/* =====================================================================
+   EDITORS (plant users only)
+   ===================================================================== */
+let erDraft=null, hrDraft=null;
+function openEditor(){
+  if(state.page==='hr'||state.page==='hrp') openHrEditor(); else openErEditor();
+}
+function openErEditor(){
+  erDraft=ER_PARAMS.map((p,i)=>({name:p.name,wt:p.wt,fpr:p.fpr,score:p.score,formula:p.formula,bands:p.bands.map(b=>[...b]),abbr:p.abbr,r:ER_RATINGS[state.plant][i]}));
+  $('#editTitle').textContent="Edit ER Parameters";
+  $('#editSub').textContent=state.plant+" Plant · edit ratings, weightage, criteria or add/remove parameters";
+  renderErEditor(); $('#editSave').onclick=saveErEditor; openModal('editModal');
+}
+function renderErEditor(){
+  $('#editBody').innerHTML=`<div class="tbl-scroll" style="max-height:56vh"><table class="etable">
+    <thead><tr><th style="width:22px">#</th><th>Parameter</th><th style="width:52px">Weight</th><th style="width:70px">Rating</th><th style="width:64px">Scored?</th><th style="width:70px">FPR</th><th style="width:28px"></th></tr></thead>
+    <tbody>${erDraft.map((p,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><input value="${(p.name||'').replace(/"/g,'&quot;')}" oninput="erF(${i},'name',this.value)"></td>
+      <td><input class="w-sm" type="number" min="0" value="${p.wt}" oninput="erF(${i},'wt',this.value)"></td>
+      <td><input class="w-sm" type="number" min="0" max="5" value="${p.r}" oninput="erF(${i},'r',this.value)"></td>
+      <td style="text-align:center"><input type="checkbox" ${p.score?'checked':''} onchange="erF(${i},'score',this.checked)"></td>
+      <td><input value="${(p.fpr||'').replace(/"/g,'&quot;')}" oninput="erF(${i},'fpr',this.value)"></td>
+      <td><button class="del" onclick="delEr(${i})">✕</button></td></tr>`).join('')}</tbody></table></div>
+    <div style="margin-top:10px"><button class="ebtn ghost" onclick="addEr()">+ Add Parameter</button></div>`;
+  const tot=erDraft.filter(p=>p.score).reduce((s,p)=>s+(+p.wt||0),0);
+  const el=$('#wtTot'); el.className='wt-tot '+(tot===60||tot>0?'ok':'bad');
+  el.innerHTML=`Scored weightage total: <b>${tot}</b>`;
+}
+function erF(i,k,v){erDraft[i][k]=(k==='wt')?(+v||0):(k==='r')?Math.max(0,Math.min(5,Math.round(+v||0))):v;if(k==='wt'||k==='score')renderErEditor();}
+function addEr(){erDraft.push({name:"New parameter",wt:0,fpr:"LHR",score:true,formula:"define measure",bands:[["target","5"],["below","1"]],abbr:{},r:3});renderErEditor();}
+function delEr(i){if(erDraft.length<=1)return;erDraft.splice(i,1);renderErEditor();}
+function saveErEditor(){
+  ER_PARAMS.length=0;
+  erDraft.forEach(p=>ER_PARAMS.push({name:p.name||'Parameter',wt:+p.wt||0,fpr:p.fpr||'',score:!!p.score,formula:p.formula||'',bands:p.bands||[["—","0"]],abbr:p.abbr||{}}));
+  ER_RATINGS[state.plant]=erDraft.map(p=>p.r);
+  closeModal('editModal'); render();
+}
+function openHrEditor(){
+  hrDraft=HR_METRICS.map(m=>({cat:m.cat,name:m.name,show:m.show,unit:m.unit,abbr:m.abbr,v:hrV(state.plant,m.name)}));
+  $('#editTitle').textContent="Edit HR Metrics";
+  $('#editSub').textContent=state.plant+" Plant · edit values or add/remove metrics";
+  renderHrEditor(); $('#editSave').onclick=saveHrEditor; openModal('editModal');
+}
+function renderHrEditor(){
+  $('#editBody').innerHTML=`<div class="tbl-scroll" style="max-height:56vh"><table class="etable">
+    <thead><tr><th style="width:22px">#</th><th>Category</th><th>Metric</th><th style="width:80px">Value</th><th style="width:64px">On summary?</th><th style="width:28px"></th></tr></thead>
+    <tbody>${hrDraft.map((m,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><input value="${(m.cat||'').replace(/"/g,'&quot;')}" oninput="hrF(${i},'cat',this.value)"></td>
+      <td><input value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="hrF(${i},'name',this.value)"></td>
+      <td><input class="w-sm" type="number" value="${m.v}" oninput="hrF(${i},'v',this.value)"></td>
+      <td style="text-align:center"><input type="checkbox" ${m.show?'checked':''} onchange="hrF(${i},'show',this.checked)"></td>
+      <td><button class="del" onclick="delHr(${i})">✕</button></td></tr>`).join('')}</tbody></table></div>
+    <div style="margin-top:10px"><button class="ebtn ghost" onclick="addHr()">+ Add Metric</button></div>`;
+  $('#wtTot').innerHTML='';
+}
+function hrF(i,k,v){hrDraft[i][k]=(k==='v')?(+v||0):v;}
+function addHr(){hrDraft.push({cat:"New Category",name:"New metric",show:true,unit:"count",abbr:{},v:0});renderHrEditor();}
+function delHr(i){if(hrDraft.length<=1)return;hrDraft.splice(i,1);renderHrEditor();}
+function saveHrEditor(){
+  HR_METRICS.length=0;
+  hrDraft.forEach(m=>HR_METRICS.push({cat:m.cat||'Category',name:m.name||'Metric',show:!!m.show,unit:m.unit||'count',abbr:m.abbr||{}}));
+  HR_VALUES[state.plant]={}; hrDraft.forEach(m=>HR_VALUES[state.plant][m.name]=m.v);
+  closeModal('editModal'); render();
+}
+
+/* modal helpers */
+const openModal=id=>$('#'+id).classList.add('open');
+const closeModal=id=>$('#'+id).classList.remove('open');
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-back'))e.target.classList.remove('open');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-back.open').forEach(m=>m.classList.remove('open'));});
+
+/* master render */
+function render(){
+  clearCharts();
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===state.page));
+  ({er:pageER,hr:pageHR,erp:pageERP,hrp:pageHRP}[state.page]||pageER)();
+}
+
+/* login */
+const ACCESS_CODE="plant123";  // change this before sharing; not shown on the dashboard
+function doLogin(){
+  const code=$('#loginCode').value.trim(), err=$('#loginErr');
+  if(code!==ACCESS_CODE){err.textContent="Incorrect access code. Please contact your MIS administrator.";return;}
+  err.textContent=""; state.plant=$('#loginPlant').value;
+  $('#plantChip').innerHTML=`<span class="pd"></span>${state.plant} Plant`;
+  $('#login').style.display='none'; render();
+  setTimeout(()=>$('#loader').classList.add('hide'),350);
+}
+
+/* events */
+$('#nav').onclick=e=>{if(e.target.dataset.p){state.page=e.target.dataset.p;render();}};
+$('#editBtn').onclick=openEditor;
+$('#signout').onclick=()=>location.reload();
+$('#loginBtn').onclick=doLogin;
+$('#loginCode').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+/* init */
+initHR();
+window.addEventListener('load',()=>{});
+</script>
+</body>
+</html>
