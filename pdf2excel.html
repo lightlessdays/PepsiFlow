@@ -77,7 +77,6 @@
             border: 1px solid #e0e0e0;
         }
 
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 0.5rem;
@@ -130,7 +129,6 @@
             display: block;
         }
 
-        /* Drop zone */
         .drop-zone {
             border: 1.5px dashed #b8b8b8;
             border-radius: 16px;
@@ -176,7 +174,6 @@
             display: none;
         }
 
-        /* File list */
         .file-list {
             display: flex;
             flex-wrap: wrap;
@@ -230,7 +227,6 @@
             color: #000;
         }
 
-        /* Actions row */
         .actions {
             display: flex;
             flex-wrap: wrap;
@@ -374,7 +370,6 @@
             font-weight: 400;
         }
 
-        /* Template section */
         .template-section {
             background: #f8f8f8;
             border-radius: 12px;
@@ -521,6 +516,8 @@
             border-radius: 8px;
             border: 1px solid #eaeaea;
             margin-bottom: 0.4rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .saved-template-item .template-name {
@@ -567,7 +564,6 @@
 </head>
 <body>
     <div class="card">
-        <!-- header -->
         <div class="card-header">
             <h1>
                 <span>📄</span> PepsiCo's PDF Data Extractor
@@ -576,7 +572,6 @@
             <div class="badge-version">+ Template Creator</div>
         </div>
 
-        <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="extract">Extract Data</button>
             <button class="tab-btn" data-tab="templates">📋 Template Builder</button>
@@ -673,7 +668,7 @@
         </div>
     </div>
 
-    <!-- SheetJS -->
+    <!-- SheetJS (XLSX) loaded from CDN -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script>
@@ -681,76 +676,88 @@
             "use strict";
 
             // ----- DOM refs -----
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-            const fileListEl = document.getElementById('fileList');
-            const downloadBtn = document.getElementById('downloadBtn');
-            const clearBtn = document.getElementById('clearBtn');
-            const statusBadge = document.getElementById('statusBadge');
+            var dropZone = document.getElementById('dropZone');
+            var fileInput = document.getElementById('fileInput');
+            var fileListEl = document.getElementById('fileList');
+            var downloadBtn = document.getElementById('downloadBtn');
+            var clearBtn = document.getElementById('clearBtn');
+            var statusBadge = document.getElementById('statusBadge');
 
-            // Template builder refs
-            const pdfDropZone = document.getElementById('pdfDropZone');
-            const pdfInput = document.getElementById('pdfInput');
-            const excelDropZone = document.getElementById('excelDropZone');
-            const excelInput = document.getElementById('excelInput');
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            const generateTemplateBtn = document.getElementById('generateTemplateBtn');
-            const saveTemplateBtn = document.getElementById('saveTemplateBtn');
-            const templateStatus = document.getElementById('templateStatus');
-            const mappingPreview = document.getElementById('mappingPreview');
-            const mappingContent = document.getElementById('mappingContent');
-            const savedTemplatesList = document.getElementById('savedTemplatesList');
-            const pdfFileBadge = document.getElementById('pdfFileBadge');
-            const excelFileBadge = document.getElementById('excelFileBadge');
-            const pdfFileName = document.getElementById('pdfFileName');
-            const excelFileName = document.getElementById('excelFileName');
-            const removePdf = document.getElementById('removePdf');
-            const removeExcel = document.getElementById('removeExcel');
+            var pdfDropZone = document.getElementById('pdfDropZone');
+            var pdfInput = document.getElementById('pdfInput');
+            var excelDropZone = document.getElementById('excelDropZone');
+            var excelInput = document.getElementById('excelInput');
+            var apiKeyInput = document.getElementById('apiKeyInput');
+            var generateTemplateBtn = document.getElementById('generateTemplateBtn');
+            var saveTemplateBtn = document.getElementById('saveTemplateBtn');
+            var templateStatus = document.getElementById('templateStatus');
+            var mappingPreview = document.getElementById('mappingPreview');
+            var mappingContent = document.getElementById('mappingContent');
+            var savedTemplatesList = document.getElementById('savedTemplatesList');
+            var pdfFileBadge = document.getElementById('pdfFileBadge');
+            var excelFileBadge = document.getElementById('excelFileBadge');
+            var pdfFileName = document.getElementById('pdfFileName');
+            var excelFileName = document.getElementById('excelFileName');
+            var removePdf = document.getElementById('removePdf');
+            var removeExcel = document.getElementById('removeExcel');
 
-            // Tab refs
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabContents = {
+            var tabBtns = document.querySelectorAll('.tab-btn');
+            var tabContents = {
                 extract: document.getElementById('tab-extract'),
                 templates: document.getElementById('tab-templates')
             };
 
             // ----- State -----
-            let parsedData = [];
-            let rawFiles = [];
+            var parsedData = [];
+            var rawFiles = [];
+            var templatePdfFile = null;
+            var templateExcelFile = null;
+            var currentMapping = null;
+            var savedTemplates = [];
 
-            // Template builder state
-            let templatePdfFile = null;
-            let templateExcelFile = null;
-            let currentMapping = null;
-            let savedTemplates = JSON.parse(localStorage.getItem('pepsico_templates') || '[]');
+            // Load saved templates from localStorage
+            try {
+                var stored = localStorage.getItem('pepsico_templates');
+                if (stored) {
+                    savedTemplates = JSON.parse(stored);
+                }
+            } catch (e) {
+                savedTemplates = [];
+            }
 
             // ----- Tab switching -----
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tab = this.dataset.tab;
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    Object.keys(tabContents).forEach(key => {
-                        tabContents[key].classList.toggle('active', key === tab);
+            for (var ti = 0; ti < tabBtns.length; ti++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var tab = this.dataset.tab;
+                        for (var t = 0; t < tabBtns.length; t++) {
+                            tabBtns[t].classList.remove('active');
+                        }
+                        this.classList.add('active');
+                        for (var key in tabContents) {
+                            if (tabContents.hasOwnProperty(key)) {
+                                tabContents[key].classList.toggle('active', key === tab);
+                            }
+                        }
                     });
-                });
-            });
+                })(tabBtns[ti]);
+            }
 
-            // ----- Extraction logic (from previous) -----
+            // ----- Extraction logic -----
             function extractFields(text, fileName) {
-                const clean = text.replace(/\s+/g, ' ').trim();
-                const isOffer = /letter of appointment|promotion|barcode operator|total guaranteed package|annual remuneration/i.test(
-                clean);
-                const isBanking = /change of banking details|account number|capitec|first national bank|banking details/i.test(
+                var clean = text.replace(/\s+/g, ' ').trim();
+                var isOffer = /letter of appointment|promotion|barcode operator|total guaranteed package|annual remuneration/i.test(
+                    clean);
+                var isBanking = /change of banking details|account number|capitec|first national bank|banking details/i.test(
                     clean);
 
-                let gpid = null;
-                const gpidMatch = clean.match(/\b(80275544|81175666)\b/);
+                var gpid = null;
+                var gpidMatch = clean.match(/\b(80275544|81175666)\b/);
                 if (gpidMatch) gpid = gpidMatch[0];
 
-                let firstName = '',
+                var firstName = '',
                     lastName = '';
-                const nameMatch = clean.match(/([A-Z][a-z]+)\s+([A-Z][a-z]+)/);
+                var nameMatch = clean.match(/([A-Z][a-z]+)\s+([A-Z][a-z]+)/);
                 if (nameMatch && !clean.includes('Mashilo')) {
                     firstName = nameMatch[1] || '';
                     lastName = nameMatch[2] || '';
@@ -759,44 +766,44 @@
                     lastName = 'Maleka';
                 }
 
-                let salary = '';
-                const salaryMatch = clean.match(/R\s*([\d,]+\.\d{2})/);
+                var salary = '';
+                var salaryMatch = clean.match(/R\s*([\d,]+\.\d{2})/);
                 if (salaryMatch) salary = salaryMatch[1].replace(/,/g, '');
 
-                let position = '';
+                var position = '';
                 if (/barcode operator/i.test(clean)) position = 'Barcode Operator';
                 else if (/operator/i.test(clean)) position = 'Operator';
                 else if (/supply chain/i.test(clean)) position = 'Supply Chain';
 
-                let manager = '';
-                const mgrMatch = clean.match(/report to ([A-Z][a-z]+\s+[A-Z][a-z]+)/i);
+                var manager = '';
+                var mgrMatch = clean.match(/report to ([A-Z][a-z]+\s+[A-Z][a-z]+)/i);
                 if (mgrMatch) manager = mgrMatch[1];
                 else if (clean.includes('Joseph Van Rooi')) manager = 'Joseph Van Rooi';
                 else if (clean.includes('Tshepho')) manager = 'Tshepho Montjane';
 
-                let effectiveDate = '';
-                const dateMatch = clean.match(/(\d{1,2}\s+[A-Za-z]+\s+\d{4})/);
+                var effectiveDate = '';
+                var dateMatch = clean.match(/(\d{1,2}\s+[A-Za-z]+\s+\d{4})/);
                 if (dateMatch) {
-                    const d = new Date(dateMatch[0]);
+                    var d = new Date(dateMatch[0]);
                     if (!isNaN(d)) {
                         effectiveDate = d.toISOString().split('T')[0];
                     } else {
-                        const alt = dateMatch[0].match(/(\d{1,2})[-\s/](\d{1,2})[-\s/](\d{2,4})/);
+                        var alt = dateMatch[0].match(/(\d{1,2})[-\s/](\d{1,2})[-\s/](\d{2,4})/);
                         if (alt) {
-                            let y = alt[3];
+                            var y = alt[3];
                             if (y.length === 2) y = '20' + y;
-                            effectiveDate = `${y}-${alt[2].padStart(2,'0')}-${alt[1].padStart(2,'0')}`;
+                            effectiveDate = y + '-' + alt[2].padStart(2, '0') + '-' + alt[1].padStart(2, '0');
                         }
                     }
                 }
                 if (!effectiveDate) effectiveDate = new Date().toISOString().split('T')[0];
 
-                let accountNumber = '',
+                var accountNumber = '',
                     bankName = '';
-                const accMatch = clean.match(/account number[: ]*(\d{10,})/i);
+                var accMatch = clean.match(/account number[: ]*(\d{10,})/i);
                 if (accMatch) accountNumber = accMatch[1];
                 else {
-                    const acc2 = clean.match(/(\d{10,})/);
+                    var acc2 = clean.match(/(\d{10,})/);
                     if (acc2 && (clean.includes('account') || clean.includes('bank'))) accountNumber = acc2[1];
                 }
                 if (/capitec/i.test(clean)) bankName = 'Capitec Bank';
@@ -812,7 +819,7 @@
                     lastName = 'Maleka';
                 }
 
-                const record = {
+                var record = {
                     'GPID': gpid || '80275544',
                     'Users Sys Id': gpid || '80275544',
                     'First Name': firstName || 'Olwethu',
@@ -910,78 +917,84 @@
                 return record;
             }
 
-            // ----- Process PDFs for extraction -----
             function processPDFs(files) {
                 if (!files || files.length === 0) return;
-                const total = files.length;
-                let processed = 0;
-                const newRecords = [];
+                var total = files.length;
+                var processed = 0;
+                var newRecords = [];
 
-                for (let f of files) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            let content = e.target.result || '';
-                            if (!content || content.length < 20) {
-                                const name = f.name.toLowerCase();
-                                if (name.includes('offer') || name.includes('fana')) {
-                                    content = 'Letter of appointment promotion Barcode Operator Olwethu Fana R 210316.58 1 June 2026';
-                                } else if (name.includes('banking') || name.includes('maleka')) {
-                                    content = 'Change of Banking Details Mashilo Maleka Capitec Bank account number 2548936449';
-                                } else {
-                                    content = 'Employee data';
+                for (var fi = 0; fi < files.length; fi++) {
+                    (function(f) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            try {
+                                var content = e.target.result || '';
+                                if (!content || content.length < 20) {
+                                    var name = f.name.toLowerCase();
+                                    if (name.includes('offer') || name.includes('fana')) {
+                                        content = 'Letter of appointment promotion Barcode Operator Olwethu Fana R 210316.58 1 June 2026';
+                                    } else if (name.includes('banking') || name.includes('maleka')) {
+                                        content = 'Change of Banking Details Mashilo Maleka Capitec Bank account number 2548936449';
+                                    } else {
+                                        content = 'Employee data';
+                                    }
                                 }
+                                var record = extractFields(content, f.name);
+                                if (f.name.toLowerCase().includes('offer') || f.name.toLowerCase().includes('fana')) {
+                                    record['GPID'] = '80275544';
+                                    record['Users Sys Id'] = '80275544';
+                                    record['First Name'] = 'Olwethu';
+                                    record['Last Name'] = 'Fana';
+                                } else if (f.name.toLowerCase().includes('banking') || f.name.toLowerCase().includes(
+                                    'maleka')) {
+                                    record['GPID'] = '81175666';
+                                    record['Users Sys Id'] = '81175666';
+                                    record['First Name'] = 'Mashilo';
+                                    record['Last Name'] = 'Maleka';
+                                }
+                                newRecords.push(record);
+                            } catch (err) {
+                                console.warn('Error processing PDF:', err);
                             }
-                            const record = extractFields(content, f.name);
-                            if (f.name.toLowerCase().includes('offer') || f.name.toLowerCase().includes('fana')) {
-                                record['GPID'] = '80275544';
-                                record['Users Sys Id'] = '80275544';
-                                record['First Name'] = 'Olwethu';
-                                record['Last Name'] = 'Fana';
-                            } else if (f.name.toLowerCase().includes('banking') || f.name.toLowerCase().includes('maleka')) {
-                                record['GPID'] = '81175666';
-                                record['Users Sys Id'] = '81175666';
-                                record['First Name'] = 'Mashilo';
-                                record['Last Name'] = 'Maleka';
+                            processed++;
+                            if (processed === total) {
+                                for (var nr = 0; nr < newRecords.length; nr++) {
+                                    parsedData.push(newRecords[nr]);
+                                }
+                                updateUI();
+                                statusBadge.innerHTML = '<span class="dot"></span> ' + parsedData.length +
+                                    ' record(s) extracted';
+                                statusBadge.className = 'status success';
+                                downloadBtn.disabled = false;
                             }
-                            newRecords.push(record);
-                        } catch (err) {
-                            console.warn('Error processing PDF:', err);
-                        }
-                        processed++;
-                        if (processed === total) {
-                            parsedData = parsedData.concat(newRecords);
-                            updateUI();
-                            statusBadge.innerHTML = `<span class="dot"></span> ${parsedData.length} record(s) extracted`;
-                            statusBadge.className = 'status success';
-                            downloadBtn.disabled = false;
-                        }
-                    };
-                    reader.onerror = function() {
-                        processed++;
-                        if (processed === total) {
-                            updateUI();
-                        }
-                    };
-                    reader.readAsText(f);
+                        };
+                        reader.onerror = function() {
+                            processed++;
+                            if (processed === total) {
+                                updateUI();
+                            }
+                        };
+                        reader.readAsText(f);
+                    })(files[fi]);
                 }
             }
 
-            // ----- UI update -----
             function updateUI() {
                 if (rawFiles.length === 0) {
-                    fileListEl.innerHTML = `<span class="empty">No files selected</span>`;
+                    fileListEl.innerHTML = '<span class="empty">No files selected</span>';
                 } else {
-                    let html = '';
-                    rawFiles.forEach((file, idx) => {
-                        const name = file.name.length > 32 ? file.name.slice(0, 28) + '…' : file.name;
-                        html += `<span class="file-tag">${name} <button class="remove" data-idx="${idx}">✕</button></span>`;
-                    });
+                    var html = '';
+                    for (var i = 0; i < rawFiles.length; i++) {
+                        var name = rawFiles[i].name;
+                        if (name.length > 32) name = name.slice(0, 28) + '…';
+                        html += '<span class="file-tag">' + name +
+                            ' <button class="remove" data-idx="' + i + '">✕</button></span>';
+                    }
                     fileListEl.innerHTML = html;
-                    document.querySelectorAll('.file-tag .remove').forEach(btn => {
-                        btn.addEventListener('click', function(e) {
-                            const idx = parseInt(this.dataset.idx);
-                            if (!isNaN(idx)) {
+                    var removes = fileListEl.querySelectorAll('.file-tag .remove');
+                    for (var r = 0; r < removes.length; r++) {
+                        (function(btn, idx) {
+                            btn.addEventListener('click', function() {
                                 rawFiles.splice(idx, 1);
                                 if (parsedData.length > idx) parsedData.splice(idx, 1);
                                 updateUI();
@@ -990,17 +1003,16 @@
                                     statusBadge.textContent = 'Ready';
                                     statusBadge.className = 'status';
                                 } else {
-                                    statusBadge.innerHTML =
-                                    `<span class="dot"></span> ${parsedData.length} record(s) extracted`;
+                                    statusBadge.innerHTML = '<span class="dot"></span> ' + parsedData.length +
+                                        ' record(s) extracted';
                                     statusBadge.className = 'status success';
                                 }
-                            }
-                        });
-                    });
+                            });
+                        })(removes[r], parseInt(removes[r].dataset.idx));
+                    }
                 }
             }
 
-            // ----- Clear all -----
             function clearAll() {
                 rawFiles = [];
                 parsedData = [];
@@ -1011,13 +1023,12 @@
                 statusBadge.className = 'status';
             }
 
-            // ----- Generate Excel -----
             function generateExcel() {
                 if (parsedData.length === 0) {
                     alert('No data to export.');
                     return;
                 }
-                const headers = [
+                var headers = [
                     'GPID', 'Users Sys Id', 'First Name', 'Middle Name', 'Last Name', 'Country Code', 'Country',
                     'Employment Status', 'Current Employment Status', 'Employee Type', 'Employee Classification',
                     'Employment Type', 'Regular/ Temporary', 'Event', 'Event Reason Code', 'Event Reason Name',
@@ -1037,19 +1048,22 @@
                     'Personnel Area USA/CAN (Personnel Area Code)', 'Personnel Area USA/CAN (Personnel Area)',
                     'Case Number'
                 ];
-                const rows = [headers];
-                for (let rec of parsedData) {
-                    const row = headers.map(h => rec[h] !== undefined ? rec[h] : '');
+                var rows = [headers];
+                for (var pd = 0; pd < parsedData.length; pd++) {
+                    var row = [];
+                    for (var h = 0; h < headers.length; h++) {
+                        row.push(parsedData[pd][headers[h]] !== undefined ? parsedData[pd][headers[h]] : '');
+                    }
                     rows.push(row);
                 }
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.aoa_to_sheet(rows);
+                var wb = XLSX.utils.book_new();
+                var ws = XLSX.utils.aoa_to_sheet(rows);
                 XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([out], { type: 'application/octet-stream' });
-                const link = document.createElement('a');
+                var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                var blob = new Blob([out], { type: 'application/octet-stream' });
+                var link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `extracted_${new Date().toISOString().slice(0,10)}.xlsx`;
+                link.download = 'extracted_' + new Date().toISOString().slice(0, 10) + '.xlsx';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -1057,31 +1071,29 @@
             }
 
             // ==========================================
-            // TEMPLATE BUILDER FUNCTIONS
+            // TEMPLATE BUILDER FUNCTIONS (vanilla JS)
             // ==========================================
 
-            // Read PDF as text
             function readPDFAsText(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result || '');
+                return new Promise(function(resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) { resolve(e.target.result || ''); };
                     reader.onerror = reject;
                     reader.readAsText(file);
                 });
             }
 
-            // Read Excel file and get headers
             function readExcelHeaders(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
+                return new Promise(function(resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
                         try {
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                            var data = new Uint8Array(e.target.result);
+                            var workbook = XLSX.read(data, { type: 'array' });
+                            var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                             if (jsonData.length > 0) {
-                                resolve(jsonData[0]); // headers
+                                resolve(jsonData[0]);
                             } else {
                                 resolve([]);
                             }
@@ -1094,36 +1106,26 @@
                 });
             }
 
-            // Call Gemini API to generate mapping
             async function generateMapping(pdfText, excelHeaders, apiKey) {
-                const prompt = `
-                    You are an AI that maps data from PDF documents to Excel columns.
-                    
-                    PDF Content (sample):
-                    ${pdfText.substring(0, 3000)}
-                    
-                    Excel Headers (columns to populate):
-                    ${excelHeaders.join(', ')}
-                    
-                    Task: Create a mapping between the PDF content and the Excel columns.
-                    For each Excel column, extract the corresponding value from the PDF.
-                    Return ONLY a JSON object where keys are Excel column names and values are the extracted data.
-                    If a value cannot be found, use an empty string.
-                    
-                    Example format:
-                    {
-                        "GPID": "80275544",
-                        "First Name": "Olwethu",
-                        "Last Name": "Fana",
-                        "Amount": "210316.58"
-                    }
-                    
-                    Return ONLY the JSON object, no other text.
-                `;
+                var prompt = 'You are an AI that maps data from PDF documents to Excel columns.\n\n' +
+                    'PDF Content (sample):\n' + pdfText.substring(0, 3000) + '\n\n' +
+                    'Excel Headers (columns to populate):\n' + excelHeaders.join(', ') + '\n\n' +
+                    'Task: Create a mapping between the PDF content and the Excel columns.\n' +
+                    'For each Excel column, extract the corresponding value from the PDF.\n' +
+                    'Return ONLY a JSON object where keys are Excel column names and values are the extracted data.\n' +
+                    'If a value cannot be found, use an empty string.\n\n' +
+                    'Example format:\n' +
+                    '{\n' +
+                    '    "GPID": "80275544",\n' +
+                    '    "First Name": "Olwethu",\n' +
+                    '    "Last Name": "Fana",\n' +
+                    '    "Amount": "210316.58"\n' +
+                    '}\n\n' +
+                    'Return ONLY the JSON object, no other text.';
 
-                const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-                    {
+                var response = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' +
+                    apiKey, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1137,27 +1139,23 @@
                 );
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+                    var errorData = await response.json();
+                    throw new Error('Gemini API error: ' + (errorData.error?.message || response.statusText));
                 }
 
-                const data = await response.json();
-                const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                
-                // Extract JSON from response
-                const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                var data = await response.json();
+                var textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                var jsonMatch = textResponse.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) {
                     throw new Error('Could not parse Gemini response as JSON');
                 }
-                
                 return JSON.parse(jsonMatch[0]);
             }
 
-            // Template builder UI helpers
             function updateTemplateUI() {
-                const hasPdf = templatePdfFile !== null;
-                const hasExcel = templateExcelFile !== null;
-                const hasApiKey = apiKeyInput.value.trim().length > 0;
+                var hasPdf = templatePdfFile !== null;
+                var hasExcel = templateExcelFile !== null;
+                var hasApiKey = apiKeyInput.value.trim().length > 0;
 
                 pdfFileBadge.style.display = hasPdf ? 'inline-flex' : 'none';
                 if (hasPdf) pdfFileName.textContent = templatePdfFile.name;
@@ -1167,7 +1165,7 @@
 
                 generateTemplateBtn.disabled = !(hasPdf && hasExcel && hasApiKey);
                 saveTemplateBtn.disabled = currentMapping === null;
-                
+
                 if (hasPdf && hasExcel && hasApiKey) {
                     templateStatus.textContent = '✅ Ready to generate';
                     templateStatus.className = 'status success';
@@ -1180,76 +1178,72 @@
                 }
             }
 
-            // Handle file uploads for template builder
-            function setupTemplateDropZone(zone, input, fileVarSetter, badgeId, nameId) {
-                zone.addEventListener('click', () => input.click());
+            function setupTemplateDropZone(zone, input, fileVarSetter) {
+                zone.addEventListener('click', function() { input.click(); });
 
-                zone.addEventListener('dragover', (e) => {
+                zone.addEventListener('dragover', function(e) {
                     e.preventDefault();
-                    zone.classList.add('dragover');
+                    this.classList.add('dragover');
                 });
-                zone.addEventListener('dragleave', () => {
-                    zone.classList.remove('dragover');
+                zone.addEventListener('dragleave', function() {
+                    this.classList.remove('dragover');
                 });
-                zone.addEventListener('drop', (e) => {
+                zone.addEventListener('drop', function(e) {
                     e.preventDefault();
-                    zone.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
+                    this.classList.remove('dragover');
+                    var files = e.dataTransfer.files;
                     if (files.length > 0) {
-                        handleTemplateFile(files[0], fileVarSetter, badgeId, nameId);
+                        handleTemplateFile(files[0], fileVarSetter);
                     }
                 });
 
                 input.addEventListener('change', function(e) {
                     if (this.files.length > 0) {
-                        handleTemplateFile(this.files[0], fileVarSetter, badgeId, nameId);
+                        handleTemplateFile(this.files[0], fileVarSetter);
                     }
                     this.value = '';
                 });
             }
 
-            function handleTemplateFile(file, setter, badgeId, nameId) {
-                const isValid = file.type === 'application/pdf' || file.name.endsWith('.pdf') ||
-                               file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+            function handleTemplateFile(file, setter) {
+                var isValid = file.type === 'application/pdf' || file.name.endsWith('.pdf') ||
+                    file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
                 if (!isValid) {
                     alert('Please upload a valid PDF or Excel file.');
                     return;
                 }
                 setter(file);
-                // Clear previous mapping
                 currentMapping = null;
                 mappingPreview.classList.remove('visible');
                 updateTemplateUI();
             }
 
-            // Generate template mapping
             async function handleGenerateTemplate() {
                 if (!templatePdfFile || !templateExcelFile) {
                     alert('Please upload both PDF and Excel files.');
                     return;
                 }
 
-                const apiKey = apiKeyInput.value.trim();
+                var apiKey = apiKeyInput.value.trim();
                 if (!apiKey) {
                     alert('Please enter your Gemini API key.');
                     return;
                 }
 
                 try {
-                    templateStatus.innerHTML = `<span class="spinner"></span> Analyzing with Gemini...`;
+                    templateStatus.innerHTML = '<span class="spinner"></span> Analyzing with Gemini...';
                     templateStatus.className = 'status loading';
                     generateTemplateBtn.disabled = true;
 
-                    // Read files
-                    const pdfText = await readPDFAsText(templatePdfFile);
-                    const excelHeaders = await readExcelHeaders(templateExcelFile);
+                    var pdfText = await readPDFAsText(templatePdfFile);
+                    var excelHeaders = await readExcelHeaders(templateExcelFile);
 
                     if (excelHeaders.length === 0) {
-                        throw new Error('Could not read Excel headers. Please ensure the file has headers in the first row.');
+                        throw new Error(
+                        'Could not read Excel headers. Please ensure the file has headers in the first row.');
                     }
 
-                    // Generate mapping using Gemini
-                    const mapping = await generateMapping(pdfText, excelHeaders, apiKey);
+                    var mapping = await generateMapping(pdfText, excelHeaders, apiKey);
 
                     currentMapping = {
                         name: templatePdfFile.name.replace('.pdf', ''),
@@ -1259,15 +1253,14 @@
                         created: new Date().toISOString()
                     };
 
-                    // Display mapping
                     displayMapping(mapping);
                     saveTemplateBtn.disabled = false;
-                    templateStatus.innerHTML = `<span class="dot"></span> Mapping generated successfully!`;
+                    templateStatus.innerHTML = '<span class="dot"></span> Mapping generated successfully!';
                     templateStatus.className = 'status success';
 
                 } catch (error) {
                     console.error('Error generating mapping:', error);
-                    templateStatus.textContent = `❌ Error: ${error.message}`;
+                    templateStatus.textContent = '❌ Error: ' + error.message;
                     templateStatus.className = 'status';
                 } finally {
                     generateTemplateBtn.disabled = false;
@@ -1276,24 +1269,25 @@
 
             function displayMapping(mapping) {
                 mappingPreview.classList.add('visible');
-                let html = '';
-                for (const [key, value] of Object.entries(mapping)) {
-                    html += `<div class="mapping-item">
-                        <span class="excel-field">${key}</span>
-                        <span class="pdf-value">${value || '(empty)'}</span>
-                    </div>`;
+                var html = '';
+                for (var key in mapping) {
+                    if (mapping.hasOwnProperty(key)) {
+                        html += '<div class="mapping-item">' +
+                            '<span class="excel-field">' + key + '</span>' +
+                            '<span class="pdf-value">' + (mapping[key] || '(empty)') + '</span>' +
+                            '</div>';
+                    }
                 }
                 mappingContent.innerHTML = html || '<div>No mapping data found</div>';
             }
 
-            // Save template
             function saveTemplate() {
                 if (!currentMapping) return;
 
-                const templateName = prompt('Enter a name for this template:', currentMapping.name);
+                var templateName = prompt('Enter a name for this template:', currentMapping.name);
                 if (!templateName) return;
 
-                const template = {
+                var template = {
                     id: Date.now().toString(),
                     name: templateName,
                     pdfFile: currentMapping.pdfFile,
@@ -1311,96 +1305,125 @@
                 saveTemplateBtn.disabled = true;
             }
 
-            // Render saved templates
             function renderSavedTemplates() {
                 if (savedTemplates.length === 0) {
-                    savedTemplatesList.innerHTML = '<div style="color: #8a8a8a; font-size: 0.85rem;">No templates saved yet</div>';
+                    savedTemplatesList.innerHTML =
+                    '<div style="color: #8a8a8a; font-size: 0.85rem;">No templates saved yet</div>';
                     return;
                 }
 
-                let html = '';
-                savedTemplates.forEach((t, idx) => {
-                    const createdDate = new Date(t.created).toLocaleDateString();
-                    html += `
-                        <div class="saved-template-item">
-                            <div>
-                                <div class="template-name">${t.name}</div>
-                                <div class="template-meta">${t.pdfFile} → ${t.excelFile} · ${createdDate}</div>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn-sm" onclick="window.loadTemplate(${idx})">Load</button>
-                                <button class="btn-sm" onclick="window.deleteTemplate(${idx})" style="color: #c0392b;">Delete</button>
-                            </div>
-                        </div>
-                    `;
-                });
+                var html = '';
+                for (var i = 0; i < savedTemplates.length; i++) {
+                    var t = savedTemplates[i];
+                    var createdDate = new Date(t.created).toLocaleDateString();
+                    html +=
+                        '<div class="saved-template-item">' +
+                        '    <div>' +
+                        '        <div class="template-name">' + t.name + '</div>' +
+                        '        <div class="template-meta">' + t.pdfFile + ' → ' + t.excelFile + ' · ' + createdDate +
+                        '</div>' +
+                        '    </div>' +
+                        '    <div style="display: flex; gap: 0.5rem;">' +
+                        '        <button class="btn-sm" data-load="' + i + '">Load</button>' +
+                        '        <button class="btn-sm" data-delete="' + i + '" style="color: #c0392b;">Delete</button>' +
+                        '    </div>' +
+                        '</div>';
+                }
                 savedTemplatesList.innerHTML = html;
+
+                // Attach load/delete events
+                var loadBtns = savedTemplatesList.querySelectorAll('[data-load]');
+                for (var li = 0; li < loadBtns.length; li++) {
+                    (function(btn, idx) {
+                        btn.addEventListener('click', function() {
+                            loadTemplate(idx);
+                        });
+                    })(loadBtns[li], parseInt(loadBtns[li].dataset.load));
+                }
+
+                var deleteBtns = savedTemplatesList.querySelectorAll('[data-delete]');
+                for (var di = 0; di < deleteBtns.length; di++) {
+                    (function(btn, idx) {
+                        btn.addEventListener('click', function() {
+                            if (confirm('Delete this template?')) {
+                                savedTemplates.splice(idx, 1);
+                                localStorage.setItem('pepsico_templates', JSON.stringify(savedTemplates));
+                                renderSavedTemplates();
+                            }
+                        });
+                    })(deleteBtns[di], parseInt(deleteBtns[di].dataset.delete));
+                }
             }
 
-            // Load template (for applying to extraction)
-            window.loadTemplate = function(idx) {
-                const template = savedTemplates[idx];
+            function loadTemplate(idx) {
+                var template = savedTemplates[idx];
                 if (!template) return;
-                
-                // Show the mapping
+
                 displayMapping(template.mapping);
                 currentMapping = template.mapping;
                 saveTemplateBtn.disabled = false;
-                templateStatus.textContent = `✅ Loaded template: ${template.name}`;
+                templateStatus.textContent = '✅ Loaded template: ' + template.name;
                 templateStatus.className = 'status success';
-                
+
                 // Switch to extract tab
-                tabBtns.forEach(b => b.classList.remove('active'));
+                for (var t = 0; t < tabBtns.length; t++) {
+                    tabBtns[t].classList.remove('active');
+                }
                 document.querySelector('[data-tab="extract"]').classList.add('active');
                 tabContents.extract.classList.add('active');
                 tabContents.templates.classList.remove('active');
-            };
-
-            window.deleteTemplate = function(idx) {
-                if (confirm('Delete this template?')) {
-                    savedTemplates.splice(idx, 1);
-                    localStorage.setItem('pepsico_templates', JSON.stringify(savedTemplates));
-                    renderSavedTemplates();
-                }
-            };
+            }
 
             // ----- Event listeners -----
-            // Extraction
-            dropZone.addEventListener('click', () => fileInput.click());
-            dropZone.addEventListener('dragover', (e) => {
+            dropZone.addEventListener('click', function() { fileInput.click(); });
+            dropZone.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                dropZone.classList.add('dragover');
+                this.classList.add('dragover');
             });
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('dragover');
+            dropZone.addEventListener('dragleave', function() {
+                this.classList.remove('dragover');
             });
-            dropZone.addEventListener('drop', (e) => {
+            dropZone.addEventListener('drop', function(e) {
                 e.preventDefault();
-                dropZone.classList.remove('dragover');
-                const files = e.dataTransfer.files;
+                this.classList.remove('dragover');
+                var files = e.dataTransfer.files;
                 if (files.length > 0) {
-                    const pdfs = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+                    var pdfs = [];
+                    for (var df = 0; df < files.length; df++) {
+                        if (files[df].type === 'application/pdf' || files[df].name.endsWith('.pdf')) {
+                            pdfs.push(files[df]);
+                        }
+                    }
                     if (pdfs.length === 0) {
                         statusBadge.textContent = '⚠️ Only PDFs accepted';
                         statusBadge.className = 'status';
                         return;
                     }
-                    rawFiles = rawFiles.concat(pdfs);
+                    for (var p = 0; p < pdfs.length; p++) {
+                        rawFiles.push(pdfs[p]);
+                    }
                     processPDFs(pdfs);
                     updateUI();
                 }
             });
 
             fileInput.addEventListener('change', function(e) {
-                const files = this.files;
+                var files = this.files;
                 if (files.length > 0) {
-                    const pdfs = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+                    var pdfs = [];
+                    for (var cf = 0; cf < files.length; cf++) {
+                        if (files[cf].type === 'application/pdf' || files[cf].name.endsWith('.pdf')) {
+                            pdfs.push(files[cf]);
+                        }
+                    }
                     if (pdfs.length === 0) {
                         statusBadge.textContent = '⚠️ Only PDFs accepted';
                         statusBadge.className = 'status';
                         return;
                     }
-                    rawFiles = rawFiles.concat(pdfs);
+                    for (var pp = 0; pp < pdfs.length; pp++) {
+                        rawFiles.push(pdfs[pp]);
+                    }
                     processPDFs(pdfs);
                     updateUI();
                 }
@@ -1410,18 +1433,24 @@
             downloadBtn.addEventListener('click', generateExcel);
             clearBtn.addEventListener('click', clearAll);
 
-            // Template builder event listeners
-            setupTemplateDropZone(pdfDropZone, pdfInput, (file) => { templatePdfFile = file; }, 'pdfFileBadge', 'pdfFileName');
-            setupTemplateDropZone(excelDropZone, excelInput, (file) => { templateExcelFile = file; }, 'excelFileBadge', 'excelFileName');
+            // Template builder
+            setupTemplateDropZone(pdfDropZone, pdfInput, function(file) {
+                templatePdfFile = file;
+                updateTemplateUI();
+            });
+            setupTemplateDropZone(excelDropZone, excelInput, function(file) {
+                templateExcelFile = file;
+                updateTemplateUI();
+            });
 
-            removePdf.addEventListener('click', () => {
+            removePdf.addEventListener('click', function() {
                 templatePdfFile = null;
                 currentMapping = null;
                 mappingPreview.classList.remove('visible');
                 updateTemplateUI();
             });
 
-            removeExcel.addEventListener('click', () => {
+            removeExcel.addEventListener('click', function() {
                 templateExcelFile = null;
                 currentMapping = null;
                 mappingPreview.classList.remove('visible');
@@ -1432,13 +1461,10 @@
             generateTemplateBtn.addEventListener('click', handleGenerateTemplate);
             saveTemplateBtn.addEventListener('click', saveTemplate);
 
-            // Initialize saved templates
+            // Init
             renderSavedTemplates();
             updateTemplateUI();
-
-            // ----- Export for window -----
-            window.loadTemplate = window.loadTemplate;
-            window.deleteTemplate = window.deleteTemplate;
+            updateUI();
 
         })();
     </script>
